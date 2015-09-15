@@ -3,3 +3,6 @@ foursquare_data/
 gowalla_data/
 nearby-master/
 ycl-nearby-master/
+src/test*
+src/*.dat
+src/.idea/*
