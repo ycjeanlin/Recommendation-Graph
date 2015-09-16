@@ -24,6 +24,10 @@ def convert_time(input_file, output_file, time_offset):
         fw.close()
 
 
+def time_encode(weekday, time):
+    return weekday * 7 + time
+
+
 def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_index, POI_index, cat_index):
     with codecs.open(input_file, 'r') as fr:
         user_logs = {}
@@ -41,22 +45,22 @@ def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_inde
             if user in user_logs:
                 time_obj = dt.datetime.strptime(cols[-1], '%Y-%m-%d %H:%M:%S')
                 time = int(time_obj.strftime('%H'))
-                weekday = time_obj.weekday() + 1
-                user_logs[user].append((weekday, time, cols[POI_index], cols[cat_index]))
+                weekday = time_obj.weekday()
+                user_logs[user].append((time_encode(weekday, time), cols[POI_index]))
             else:
                 user_logs[user] = []
                 time_obj = dt.datetime.strptime(cols[-1], '%Y-%m-%d %H:%M:%S')
                 time = int(time_obj.strftime('%H'))
                 weekday = time_obj.weekday() + 1
-                user_logs[user].append((weekday, time, cols[POI_index], cols[cat_index]))
+                user_logs[user].append((time_encode(weekday, time), cols[POI_index]))
 
     fw = codecs.open(output_file, 'w')
     print 'Output User Logs'
     for user in user_logs:
         logs = []
         for t in user_logs[user]:
-            weekday, time, POI, category = t
-            logs.append('(' + str(weekday) + ',' + str(time) + ',' + POI + ',' + category + ')')
+            encoded_time, POI = t
+            logs.append('(' + str(encoded_time) + ',' + POI + ')')
 
         fw.write(user + '\t' + '\t'.join(logs) + '\n')
 
@@ -86,10 +90,10 @@ def split_train_test(user_logs, output_train, output_test):
             testing_tuples = [user_logs[user][i] for i in testing_index]
 
             for t in training_tuples:
-                fw_train.write('(' + str(t[0]) + ',' + str(t[1]) + ',' + t[2] + ',' + t[3] + ')' + '\t')
+                fw_train.write('(' + str(t[0]) + ',' + t[1] + ')' + '\t')
 
             for t in testing_tuples:
-                fw_test.write('(' + str(t[0]) + ',' + str(t[1]) + ',' + t[2] + ',' + t[3] + ')' + '\t')
+                fw_test.write('(' + str(t[0]) + ',' + t[1] + ')' + '\t')
 
         fw_train.write('\n')
         fw_test.write('\n')
@@ -105,28 +109,40 @@ def load_user_logs(log_file):
             cols = row.strip().split('\t')
             user = cols[0]
             for i in range(1, len(cols)):
-                weekday, time, POI, category = cols[i].strip('()').split(',')
+                encoded_time, POI = cols[i].strip('()').split(',')
                 if user in user_logs:
-                    user_logs[user].append((weekday, time, POI, category))
+                    user_logs[user].append((encoded_time, POI))
                 else:
                     user_logs[user] = []
-                    user_logs[user].append((weekday, time, POI, category))
+                    user_logs[user].append((encoded_time, POI))
 
     return user_logs
 
 
-def person_profile(user_logs, output_file):
+def load_hash_file(hash_file):
+    hash_table = {}
+
+    with codecs.open(hash_file, 'r') as fr:
+        for row in fr:
+            cols = row.strip().split('\t')
+            hash_table[cols[0]] = cols[1]
+
+    return hash_table
+
+
+def person_profile(user_logs, hash_poi, output_file):
     print 'Build user profile'
     user_preference = {}
 
     index = 0
     for user in user_logs:
         for t in user_logs[user]:
-            weekday, time, POI, category = t
             index += 1
             if index % 10000 == 0:
                 print index
 
+            encoded_time, POI = t
+            category = hash_poi[POI]
             if user in user_preference:
                 if category in user_preference[user]:
                     user_preference[user][category] += 1
@@ -156,4 +172,5 @@ if __name__ == '__main__':
     user_activity_all = load_raw_logs('../foursquare_data/NYC_time.dat', 'user_log_all.dat', 'poi_to_category.dat', 0, -1, 1, 3)
     split_train_test(user_activity_all, 'NYC_time_train.dat', 'NYC_time_test.dat')
     user_activity_train = load_user_logs('NYC_time_train.dat')
-    person_profile(user_activity_train, 'user_preference.dat')
+    poi_category = load_hash_file('poi_to_category.dat')
+    person_profile(user_activity_train, poi_category, 'user_preference.dat')

@@ -6,3 +6,4 @@ ycl-nearby-master/
 src/test*
 src/*.dat
 src/.idea/
+*.graph
