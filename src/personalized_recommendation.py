@@ -1,109 +1,70 @@
-import codecs
 import cPickle
 import operator
 
 
-def load_user_logs(log_file):
-    #logs loading
-    fr = codecs.open(log_file, 'r', encoding = 'utf-8')
-    rows = fr.readlines()
-    fr.close()
+def decode_time(encoded_time):
+    weekday = encoded_time / 24
+    time = encoded_time % 24
 
-    user_logs = {}
-    for row in rows:
-        cols = row.strip().split()
-        user = cols[0]
-        for i in range(1, len(cols)):
-            time, cat = cols[i].strip('()').split(',')
-            if user_logs.has_key(user):
-                if user_logs[user].has_key(time):
-                    user_logs[user][time].append(cat)
-                else:
-                    user_logs[user][time] = []
-                    user_logs[user][time].append(cat)
-            else:
-                user_logs[user] = {}
-                user_logs[user][time] = []
-                user_logs[user][time].append(cat)
+    return weekday, time
 
-    return user_logs
-
-def load_user_preference(preference_file):
-    #logs loading
-    fr = codecs.open(preference_file, 'r', encoding = 'utf-8')
-    rows = fr.readlines()
-    fr.close()
-
-    user_preference = {}
-    for row in rows:
-        cols = row.strip().split()
-        user = cols[0]
-        for i in range(1, len(cols)):
-            cat, count = cols[i].strip('()').split(',')
-            if user_preference.has_key(user):
-                user_preference[user][cat] = int(count)
-            else:
-                user_preference[user] = {}
-                user_preference[user][cat] = int(count)
-
-
-    return user_preference
 
 def user_phase(graph, node_id, time):
-    scores = {}
 
-    cats = graph.neighbors(node_id)
-    max_vote = len(cats)
+    pois = graph.neighbors(node_id)
+    max_vote = len(pois)
     voters = {}
-    for cat in cats:
-        for n in graph.neighbors(cat):
+    for poi in pois:
+        for n in graph.neighbors(poi):
             if graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time:
                 continue
             else:
-                if voters.has_key(n):
+                if n in voters:
                     voters[n] += 1
                 else:
                     voters[n] = 1
-        
 
+    scores = {}
     for voter in voters:
-        cats = graph.neighbors(voter)
+        pois = graph.neighbors(voter)
         similarity = voters[voter]
-        for cat in cats:
-            if scores.has_key(cat):
-                scores[cat] += graph[voter][cat]['weight'] * similarity / max_vote
+        for poi in pois:
+            if poi in scores:
+                scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
             else:
-                scores[cat] = graph[voter][cat]['weight'] * similarity / max_vote
+                scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
 
     return scores
+
 
 def session_phase(graph, node_id, time):
     scores = {}
 
-    if graph.node.has_key(node_id+'_'+time):
-        cats = graph.neighbors(node_id+'_'+time)
-        max_vote = len(cats)
+    if node_id+'_'+time in graph.node:
+        pois = graph.neighbors(node_id+'_'+time)
+        max_vote = len(pois)
         voters = {}
-        for cat in cats:
-            for n in graph.neighbors(cat):
+        for poi in pois:
+            for n in graph.neighbors(poi):
                 if graph.node[n]['type'] != 'session' or (graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time):
                     continue
                 else:
-                    if voters.has_key(n):
+                    if n in voters:
                         voters[n] += 1
                     else:
                         voters[n] = 1
-            
+
         for voter in voters:
-            cats = graph.neighbors(voter)
+            pois = graph.neighbors(voter)
             similarity = voters[voter]
-            for cat in cats:
-                if scores.has_key(cat):
-                    scores[cat] += graph[voter][cat]['weight'] * similarity / max_vote
+            for poi in pois:
+                if poi in scores:
+                    scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
                 else:
-                    scores[cat] = graph[voter][cat]['weight'] * similarity / max_vote
+                    scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
 
     return scores
+
 
 def load_graph(filename):
     with open(filename, 'rb') as fp:
@@ -112,6 +73,39 @@ def load_graph(filename):
 
 if __name__ == '__main__':
     model = 'foursquare.graph'
+    test_file = 'NYC_time_test.dat'
 
     print 'Graph loading'
     foursquare_graph = load_graph(model)
+
+    query = ''
+    print "Enter [node_id] [time]"
+    while query != 'exit':
+        query = raw_input('Enter:')
+        try:
+            if query == 'exit':
+                break
+
+            user_id, current_time = query.strip().split()
+
+            print '== graph =='
+            user_scores = user_phase(foursquare_graph, user_id, current_time)
+            session_scores = session_phase(foursquare_graph, user_id, current_time)
+
+            poi_scores = {}
+            if len(session_scores) > 0:
+                for poi in user_scores:
+                    if poi in session_scores:
+                        poi_scores[poi] = user_scores[poi] + session_scores[poi]
+                    else:
+                        poi_scores[poi] = user_scores[poi]
+            else:
+                poi_scores = user_scores
+
+            sorted_scores = sorted(poi_scores.items(), key=operator.itemgetter(1), reverse=True)
+            for i in range(5):
+                print i, ':', sorted_scores[i][0], sorted_scores[i][1]
+
+        except Exception, e:
+            print str(e)
+            raise

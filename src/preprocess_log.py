@@ -25,7 +25,7 @@ def convert_time(input_file, output_file, time_offset):
 
 
 def time_encode(weekday, time):
-    return weekday * 7 + time
+    return weekday * 24 + time
 
 
 def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_index, POI_index, cat_index):

@@ -5,8 +5,8 @@ import cPickle
 
 
 def decode_time(encoded_time):
-    weekday = encoded_time / 7
-    time = encoded_time % 7
+    weekday = encoded_time / 24
+    time = encoded_time % 24
 
     return weekday, time
 
