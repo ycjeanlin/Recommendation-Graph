@@ -5,5 +5,7 @@ nearby-master/
 ycl-nearby-master/
 src/test*
 src/*.dat
+src/*.txt
 src/.idea/
 *.graph
+poidata/

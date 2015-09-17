@@ -10,6 +10,7 @@ def decode_time(encoded_time):
 
     return str(weekday), str(time)
 
+
 def load_user_logs(log_file):
     print 'User logs loading'
     with codecs.open(log_file, 'r') as fr:
@@ -116,12 +117,12 @@ def write_graph(graph, filename):
 
 
 if __name__ == '__main__':
-    user_activity = load_user_logs('NYC_time_train.dat')
+    user_activity = load_user_logs('SG_time_train.dat')
 
     user_profile = load_user_preference('user_preference.dat')
 
-    poi_category = load_hash_file('poi_to_category.dat')
+    poi_category = load_hash_file('occurence.dat')
 
     foursquare_graph = create_graph(user_activity, poi_category, user_profile)
 
-    write_graph(foursquare_graph, 'foursquare.graph')
+    write_graph(foursquare_graph, 'foursquare_SG.graph')

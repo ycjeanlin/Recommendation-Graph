@@ -12,7 +12,7 @@ def decode_time(encoded_time):
 def user_phase(graph, node_id, time):
 
     pois = graph.neighbors(node_id)
-    max_vote = len(pois)
+    max_vote = float(len(pois))
     voters = {}
     for poi in pois:
         for n in graph.neighbors(poi):
@@ -30,9 +30,14 @@ def user_phase(graph, node_id, time):
         similarity = voters[voter]
         for poi in pois:
             if poi in scores:
-                scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
+                #scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
+                scores[poi] += similarity / max_vote
+                #scores[poi] += 1
             else:
-                scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
+                #scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
+                scores[poi] = similarity / max_vote
+                #scores[poi] = 1
+
 
     return scores
 
@@ -42,7 +47,7 @@ def session_phase(graph, node_id, time):
 
     if node_id+'_'+time in graph.node:
         pois = graph.neighbors(node_id+'_'+time)
-        max_vote = len(pois)
+        max_vote = float(len(pois))
         voters = {}
         for poi in pois:
             for n in graph.neighbors(poi):
@@ -59,9 +64,13 @@ def session_phase(graph, node_id, time):
             similarity = voters[voter]
             for poi in pois:
                 if poi in scores:
-                    scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
+                    #scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
+                    scores[poi] += similarity / max_vote
+                    #scores[poi] += 1
                 else:
-                    scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
+                    #scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
+                    scores[poi] = similarity / max_vote
+                    #scores[poi] = 1
 
     return scores
 
@@ -72,8 +81,8 @@ def load_graph(filename):
     return graph
 
 if __name__ == '__main__':
-    model = 'foursquare.graph'
-    test_file = 'NYC_time_test.dat'
+    model = 'foursquare_SG.graph'
+    test_file = 'SG_time_test.dat'
 
     print 'Graph loading'
     foursquare_graph = load_graph(model)
