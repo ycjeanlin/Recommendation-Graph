@@ -8,7 +8,7 @@ def decode_time(encoded_time):
     weekday = encoded_time / 24
     time = encoded_time % 24
 
-    return weekday, time
+    return str(weekday), str(time)
 
 def load_user_logs(log_file):
     print 'User logs loading'
