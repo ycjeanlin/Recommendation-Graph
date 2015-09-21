@@ -1,7 +1,7 @@
 import networkx as nx
 import codecs
 from collections import Counter
-import cPickle
+import pickle
 
 
 def decode_time(encoded_time):
@@ -12,7 +12,7 @@ def decode_time(encoded_time):
 
 
 def load_user_logs(log_file):
-    print 'User logs loading'
+    print('User logs loading')
     with codecs.open(log_file, 'r') as fr:
         user_logs = {}
         for row in fr:
@@ -36,7 +36,7 @@ def load_user_logs(log_file):
 
 
 def load_user_preference(preference_file):
-    print 'User preference loading'
+    print('User preference loading')
     with codecs.open(preference_file, 'r') as fr:
         user_preference = {}
         for row in fr:
@@ -64,17 +64,16 @@ def load_hash_file(hash_file):
     return hash_table
 
 
-
 def create_graph(user_logs, poi_hash, user_preference):
-    print 'Graph creating'
+    print('Graph creating')
     graph = nx.Graph()
 
-    print 'Session vs place'
+    print('Session vs place')
     index = 0
     for user in user_logs:
         index += 1
         if index % 100 == 0:
-            print index
+            print(index)
 
         for t in user_logs[user]:
             cat_list = []
@@ -92,12 +91,12 @@ def create_graph(user_logs, poi_hash, user_preference):
 
                 graph.add_edge(user + '_' + str(t), poi, weight=cat_freq[poi_hash[poi]] / total)
 
-    print 'User vs category'
+    print('User vs category')
     index = 0
     for user in user_logs:
         index += 1
         if index % 100 == 0:
-            print index
+            print(index)
 
         total = float(sum(user_preference[user].values()))
         graph.add_node(user, type='user')
@@ -111,9 +110,9 @@ def create_graph(user_logs, poi_hash, user_preference):
 
 
 def write_graph(graph, filename):
-    print 'Graph storing'
+    print('Graph storing')
     with open(filename, 'wb') as fp:
-        cPickle.dump(graph, fp)
+        pickle.dump(graph, fp)
 
 
 if __name__ == '__main__':

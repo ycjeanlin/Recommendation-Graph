@@ -1,4 +1,4 @@
-import cPickle
+import pickle
 import operator
 import codecs
 
@@ -75,7 +75,7 @@ def session_phase(graph, node_id, time):
     return scores
 
 def load_user_logs(log_file):
-    print 'User logs loading'
+    print('User logs loading')
     with codecs.open(log_file, 'r') as fr:
         user_logs = {}
         for row in fr:
@@ -100,14 +100,14 @@ def load_user_logs(log_file):
 
 def load_graph(filename):
     with open(filename, 'rb') as fp:
-        graph = cPickle.load(fp)
+        graph = pickle.load(fp)
     return graph
 
 if __name__ == '__main__':
     model = 'foursquare_SG.graph'
     test_file = 'SG_time_test.dat'
 
-    print 'Graph loading'
+    print('Graph loading')
     foursquare_graph = load_graph(model)
 
     test_logs = load_user_logs(test_file)
@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
 
     for user in test_logs:
-        print user
+        print(user)
         for t in test_logs[user]:
 
             activities = test_logs[user][t]
@@ -155,6 +155,6 @@ if __name__ == '__main__':
             #except Exception, e:
             #    print str(e)
 
-    print 'Precision: ', float(sum(tp.values())) / float(sum(total.values())) / 24.0
-    print 'Recall: ', float(sum(tp.values())) / float(sum(tp.values()) + sum(tn.values())) / 24.0
+    print('Precision: ', float(sum(tp.values())) / float(sum(total.values())) / 24.0)
+    print('Recall: ', float(sum(tp.values())) / float(sum(tp.values()) + sum(tn.values())) / 24.0)
 

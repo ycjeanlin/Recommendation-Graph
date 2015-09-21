@@ -1,5 +1,5 @@
 import codecs
-import datetime
+
 
 def convert_time(input_file, output_file):
     with codecs.open(input_file, 'r') as fr:
@@ -8,10 +8,10 @@ def convert_time(input_file, output_file):
         for row in fr:
             index += 1
             if (index % 1000) == 0:
-                print index
+                print(index)
 
             cols = row.strip().split('\t')
-            parse_time =  cols[-2].split(':')
+            parse_time = cols[-2].split(':')
 
             for i in range(3):
                 fw.write(cols[i] + '\t')
@@ -24,13 +24,13 @@ def convert_time(input_file, output_file):
 def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_index, POI_index):
     with codecs.open(input_file, 'r') as fr:
         user_logs = {}
-        POI_category ={}
+        POI_category = {}
         index = 0
         for row in fr:
             cols = row.strip().split('\t')
             index += 1
             if index % 10000 == 0:
-                print index
+                print(index)
 
             POI_category[cols[POI_index]] = cols[POI_index]
 
@@ -42,7 +42,7 @@ def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_inde
                 user_logs[user].append((cols[time_index], cols[POI_index]))
 
     fw = codecs.open(output_file, 'w')
-    print 'Output User Logs'
+    print('Output User Logs')
     for user in user_logs:
         logs = []
         for t in user_logs[user]:
@@ -54,7 +54,7 @@ def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_inde
     fw.close()
 
     fw = codecs.open(hash_POI_file, 'w')
-    print 'Output POI to category'
+    print('Output POI to category')
     for poi in POI_category:
         fw.write(poi + '\t' + POI_category[poi] + '\n')
 
@@ -64,7 +64,7 @@ def load_raw_logs(input_file, output_file,  hash_POI_file, user_index, time_inde
 
 
 def load_user_logs(log_file):
-    print 'Log loading'
+    print('Log loading')
     with codecs.open(log_file, 'r') as fr:
         user_logs = {}
         for row in fr:
@@ -93,7 +93,7 @@ def load_hash_file(hash_file):
 
 
 def person_profile(user_logs, hash_poi, output_file):
-    print 'Build user profile'
+    print('Build user profile')
     user_preference = {}
 
     index = 0
@@ -101,7 +101,7 @@ def person_profile(user_logs, hash_poi, output_file):
         for t in user_logs[user]:
             index += 1
             if index % 10000 == 0:
-                print index
+                print(index)
 
             encoded_time, POI = t
             category = hash_poi[POI]
@@ -116,7 +116,7 @@ def person_profile(user_logs, hash_poi, output_file):
 
     fw = codecs.open(output_file, 'w')
 
-    print 'Output Users Preference'
+    print('Output Users Preference')
     for user in user_preference:
         preference = []
         for cat in user_preference[user]:

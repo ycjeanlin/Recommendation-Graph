@@ -1,4 +1,4 @@
-import cPickle
+import pickle
 import operator
 
 
@@ -77,27 +77,27 @@ def session_phase(graph, node_id, time):
 
 def load_graph(filename):
     with open(filename, 'rb') as fp:
-        graph = cPickle.load(fp)
+        graph = pickle.load(fp)
     return graph
 
 if __name__ == '__main__':
     model = 'foursquare_SG.graph'
     test_file = 'SG_time_test.dat'
 
-    print 'Graph loading'
+    print('Graph loading')
     foursquare_graph = load_graph(model)
 
     query = ''
-    print "Enter [node_id] [time]"
+    print('Enter [node_id] [time]')
     while query != 'exit':
-        query = raw_input('Enter:')
+        query = input('Enter:')
         try:
             if query == 'exit':
                 break
 
             user_id, current_time = query.strip().split()
 
-            print '== graph =='
+            print('== graph ==')
             user_scores = user_phase(foursquare_graph, user_id, current_time)
             session_scores = session_phase(foursquare_graph, user_id, current_time)
 
@@ -113,8 +113,8 @@ if __name__ == '__main__':
 
             sorted_scores = sorted(poi_scores.items(), key=operator.itemgetter(1), reverse=True)
             for i in range(5):
-                print i, ':', sorted_scores[i][0], sorted_scores[i][1]
+                print(i, ':', sorted_scores[i][0], sorted_scores[i][1])
 
-        except Exception, e:
-            print str(e)
+        except Exception as e:
+            print(str(e))
             raise
