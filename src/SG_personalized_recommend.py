@@ -1,15 +1,43 @@
 import pickle
+from math import radians, cos, sin, asin, sqrt
+import codecs
 import operator
 
 
-def decode_time(encoded_time):
-    weekday = encoded_time / 24
-    time = encoded_time % 24
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    km = 6367 * c
+    return km * 1000
 
-    return weekday, time
+def load_graph(filename):
+    with open(filename, 'rb') as fp:
+        graph = pickle.load(fp)
+    return graph
 
 
-def user_phase(graph, node_id, time):
+def load_hash_file(hash_file):
+    hash_table = {}
+
+    with codecs.open(hash_file, 'r') as fr:
+        for row in fr:
+            cols = row.strip().split('\t')
+            position = [float(x) for x in cols[1].split(',')]
+            hash_table[cols[0]] = (position[0], position[1])
+
+    return hash_table
+
+
+def user_phase(graph, node_id, time, lat, lon, poi_hash):
 
     pois = graph.neighbors(node_id)
     max_vote = float(len(pois))
@@ -29,20 +57,25 @@ def user_phase(graph, node_id, time):
         pois = graph.neighbors(voter)
         similarity = voters[voter]
         for poi in pois:
+            poi_lat, poi_lon = poi_hash[poi]
+            distance = haversine(lat, lon, poi_lat, poi_lon)
+            if distance == 0:
+                distance = 1
+
             if poi in scores:
                 #scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
-                scores[poi] += similarity / max_vote
-                #scores[poi] += 1
+                #scores[poi] += similarity / max_vote
+                scores[poi] += 1 / distance
             else:
                 #scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
-                scores[poi] = similarity / max_vote
-                #scores[poi] = 1
+                #scores[poi] = similarity / max_vote
+                scores[poi] =  1 / distance
 
 
     return scores
 
 
-def session_phase(graph, node_id, time):
+def session_phase(graph, node_id, time, lat, lon, poi_hash):
     scores = {}
 
     if node_id+'_'+time in graph.node:
@@ -63,29 +96,32 @@ def session_phase(graph, node_id, time):
             pois = graph.neighbors(voter)
             similarity = voters[voter]
             for poi in pois:
+                poi_lat, poi_lon = poi_hash[poi]
+                distance = haversine(lat, lon, poi_lat, poi_lon)
+                if distance == 0:
+                    distance = 1
+
                 if poi in scores:
                     #scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
-                    scores[poi] += similarity / max_vote
-                    #scores[poi] += 1
+                    #scores[poi] += similarity / max_vote
+                    scores[poi] += 1 / distance
                 else:
                     #scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
-                    scores[poi] = similarity / max_vote
-                    #scores[poi] = 1
+                    #scores[poi] = similarity / max_vote
+                    scores[poi] = 1 / distance
 
     return scores
 
 
-def load_graph(filename):
-    with open(filename, 'rb') as fp:
-        graph = pickle.load(fp)
-    return graph
-
 if __name__ == '__main__':
-    model = 'foursquare_NYC.graph'
-    test_file = 'NYC_time_test.dat'
+    model = 'SG_foursquare.graph'
+    test_file = 'SG_time_test.dat'
 
     print('Graph loading')
     foursquare_graph = load_graph(model)
+
+    print('POI to position')
+    poi_position =  load_hash_file('poi_to_position.dat')
 
     query = ''
     print('Enter [node_id] [time]')
@@ -95,11 +131,11 @@ if __name__ == '__main__':
             if query == 'exit':
                 break
 
-            user_id, current_time = query.strip().split()
-
+            user_id, current_time, location = query.strip().split()
+            latitude, longitude = poi_position[location]
             print('== graph ==')
-            user_scores = user_phase(foursquare_graph, user_id, current_time)
-            session_scores = session_phase(foursquare_graph, user_id, current_time)
+            user_scores = user_phase(foursquare_graph, user_id, current_time, latitude, longitude, poi_position)
+            session_scores = session_phase(foursquare_graph, user_id, current_time, latitude, longitude, poi_position)
 
             poi_scores = {}
             if len(session_scores) > 0:

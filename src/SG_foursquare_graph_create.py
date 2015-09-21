@@ -19,7 +19,7 @@ def load_user_logs(log_file):
             cols = row.strip().split('\t')
             user = cols[0]
             for i in range(1, len(cols)):
-                encoded_time, POI = cols[i].strip('|').split(',')
+                encoded_time, POI = cols[i].strip('()').split(',')
                 weekday, time = decode_time(int(encoded_time))
                 if user in user_logs:
                     if time in user_logs[user]:
@@ -35,24 +35,6 @@ def load_user_logs(log_file):
     return user_logs
 
 
-def load_user_preference(preference_file):
-    print('User preference loading')
-    with codecs.open(preference_file, 'r') as fr:
-        user_preference = {}
-        for row in fr:
-            cols = row.strip().split('\t')
-            user = cols[0]
-            for i in range(1, len(cols)):
-                cat, count = cols[i].strip('|').split(',')
-                if user in user_preference:
-                    user_preference[user][cat] = int(count)
-                else:
-                    user_preference[user] = {}
-                    user_preference[user][cat] = int(count)
-
-    return user_preference
-
-
 def load_hash_file(hash_file):
     hash_table = {}
 
@@ -64,7 +46,7 @@ def load_hash_file(hash_file):
     return hash_table
 
 
-def create_graph(user_logs, poi_hash, user_preference):
+def create_graph(user_logs, poi_hash):
     print('Graph creating')
     graph = nx.Graph()
 
@@ -76,20 +58,13 @@ def create_graph(user_logs, poi_hash, user_preference):
             print(index)
 
         for t in user_logs[user]:
-            cat_list = []
-            for poi in user_logs[user][t]:
-                cat_list.append(poi_hash[poi])
-
-            cat_freq = Counter(cat_list)
-            total = float(sum(cat_freq.values()))
 
             graph.add_node(user + '_' + str(t), type='session', time=t)
             for poi in user_logs[user][t]:
-                #print cat, (cat not in graph.nodes())
                 if poi not in graph.nodes():
-                    graph.add_node(poi, type='poi')
+                    graph.add_node(poi, type='poi', pos=poi_hash[poi])
 
-                graph.add_edge(user + '_' + str(t), poi, weight=cat_freq[poi_hash[poi]] / total)
+                graph.add_edge(user + '_' + str(t), poi)
 
     print('User vs category')
     index = 0
@@ -98,13 +73,12 @@ def create_graph(user_logs, poi_hash, user_preference):
         if index % 100 == 0:
             print(index)
 
-        total = float(sum(user_preference[user].values()))
         graph.add_node(user, type='user')
         for t in user_logs[user]:
             for poi in user_logs[user][t]:
                 if poi not in graph.nodes():
-                    graph.add_node(poi, type='poi')
-                graph.add_edge(user, poi, weight=user_preference[user][poi_hash[poi]] / total)
+                    graph.add_node(poi, type='poi', pos=poi_hash[poi])
+                graph.add_edge(user, poi)
 
     return graph
 
@@ -116,12 +90,10 @@ def write_graph(graph, filename):
 
 
 if __name__ == '__main__':
-    user_activity = load_user_logs('NYC_time_train.dat')
+    user_activity = load_user_logs('SG_time_train.dat')
 
-    user_profile = load_user_preference('user_preference.dat')
+    poi_position = load_hash_file('poi_to_position.dat')
 
-    poi_category = load_hash_file('poi_to_category.dat')
+    foursquare_graph = create_graph(user_activity, poi_position)
 
-    foursquare_graph = create_graph(user_activity, poi_category, user_profile)
-
-    write_graph(foursquare_graph, 'foursquare_NYC.graph')
+    write_graph(foursquare_graph, 'SG_foursquare.graph')
