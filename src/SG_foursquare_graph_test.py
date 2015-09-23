@@ -1,23 +1,6 @@
 import pickle
 import operator
 import codecs
-from math import radians, cos, sin, asin, sqrt
-
-
-def haversine(lon1, lat1, lon2, lat2):
-    """
-    Calculate the great circle distance between two points
-    on the earth (specified in decimal degrees)
-    """
-    # convert decimal degrees to radians
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    km = 6367 * c
-    return km
 
 
 def decode_time(encoded_time):
@@ -34,7 +17,7 @@ def user_phase(graph, node_id, time):
     voters = {}
     for poi in pois:
         for n in graph.neighbors(poi):
-            if (graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time) or n == node_id:
+            if (graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time):
                 continue
             else:
                 if n in voters:
@@ -48,13 +31,11 @@ def user_phase(graph, node_id, time):
         similarity = voters[voter]
         for poi in pois:
             if poi in scores:
-                scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
                 #scores[poi] += similarity / max_vote
-                #scores[poi] += similarity
+                scores[poi] += 1
             else:
-                scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
                 #scores[poi] = similarity / max_vote
-                #scores[poi] = similarity
+                scores[poi] = 1
 
     return scores
 
@@ -69,8 +50,7 @@ def session_phase(graph, node_id, time):
         for poi in pois:
             for n in graph.neighbors(poi):
                 if graph.node[n]['type'] != 'session' \
-                        or (graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time)\
-                        or n == node_id +'_'+time:
+                        or (graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time):
                     continue
                 else:
                     if n in voters:
@@ -83,13 +63,11 @@ def session_phase(graph, node_id, time):
             similarity = voters[voter]
             for poi in pois:
                 if poi in scores:
-                    scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
                     #scores[poi] += similarity / max_vote
-                    #scores[poi] += similarity
+                    scores[poi] += 1
                 else:
-                    scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
                     #scores[poi] = similarity / max_vote
-                    #scores[poi] = similarity
+                    scores[poi] = 1
 
     return scores
 
@@ -101,7 +79,7 @@ def load_user_logs(log_file):
             cols = row.strip().split('\t')
             user = cols[0]
             for i in range(1, len(cols)):
-                encoded_time, POI = cols[i].strip('|').split(',')
+                encoded_time, POI = cols[i].strip('()').split(',')
                 weekday, time = decode_time(int(encoded_time))
                 if user in user_logs:
                     if time in user_logs[user]:
@@ -123,8 +101,8 @@ def load_graph(filename):
     return graph
 
 if __name__ == '__main__':
-    model = 'foursquare_NYC.graph'
-    test_file = 'NYC_time_test.dat'
+    model = 'SG_foursquare.graph'
+    test_file = 'SG_time_test.dat'
 
     print('Graph loading')
     foursquare_graph = load_graph(model)
@@ -143,7 +121,6 @@ if __name__ == '__main__':
     for user in test_logs:
         print(user)
         for t in test_logs[user]:
-
             activities = test_logs[user][t]
 
             #try:
@@ -174,6 +151,11 @@ if __name__ == '__main__':
             #except Exception, e:
             #    print str(e)
 
-    print('Precision: ', float(sum(tp.values())) / float(sum(total.values())) / 24.0)
-    print('Recall: ', float(sum(tp.values())) / float(sum(tp.values()) + sum(tn.values())) / 24.0)
+    sum_precision = 0.0
+    sum_recall = 0.0
+    for t in range(24):
+        sum_precision += tp[str(t)] / total[str(t)]
+        sum_recall += tp[str(t)] / (tp[str(t)] + tn[str(t)])
 
+    print('Precision: ', sum_precision / 24.0)
+    print('Recall: ', sum_recall / 24.0)

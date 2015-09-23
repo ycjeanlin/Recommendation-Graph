@@ -66,7 +66,7 @@ def session_phase(graph, node_id, time):
             similarity = voters[voter]
             for poi in pois:
                 if poi in scores:
-                    scores[poi] += graph[voter][poi]['weight'] * similarity / max_vote
+                    scores[poi] = graph[voter][poi]['weight'] * similarity / max_vote
                     #scores[poi] += similarity / max_vote
                     #scores[poi] += similarity
                 else:
@@ -144,19 +144,25 @@ if __name__ == '__main__':
                 poi_scores = user_scores
 
             sorted_scores = sorted(poi_scores.items(), key=operator.itemgetter(1), reverse=True)
-            total[t] += 5
+            total[t] += 1
             hit = 0
             for i in range(5):
                 #print i, ':', sorted_scores[i][0], sorted_scores[i][1]
                 if sorted_scores[i][0] in activities:
                     hit += 1
+                    break
             tp[t] += hit
             tn[t] += len(activities) - hit
 
             #print 'Accuracy: ', hit / total
             #except Exception, e:
             #    print str(e)
+    sum_precision = 0.0
+    sum_recall = 0.0
+    for t in range(24):
+        sum_precision += tp[str(t)] / total[str(t)]
+        sum_recall += tp[str(t)] / (tp[str(t)] + tn[str(t)])
 
-    print('Precision: ', float(sum(tp.values())) / float(sum(total.values())) / 24.0)
-    print('Recall: ', float(sum(tp.values())) / float(sum(tp.values()) + sum(tn.values())) / 24.0)
+    print('Precision: ', sum_precision / 24.0)
+    print('Recall: ', sum_recall / 24.0)
 
