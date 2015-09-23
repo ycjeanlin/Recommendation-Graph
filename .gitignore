@@ -10,3 +10,4 @@ src/*.txt
 poidata/
 .idea/*
 data/*
+tmp*
