@@ -1,4 +1,5 @@
 import codecs
+import collections
 
 
 def convert_time(input_file, output_file):
@@ -72,6 +73,7 @@ def raw_log_to_checkin_transaction(input_file, user_index, time_index, POI_index
             user = cols[user_index]
             date = cols[date_index]
             time = int(cols[time_index])
+
             poi = cols[POI_index]
             index += 1
             if index % 10000 == 0:
@@ -91,9 +93,10 @@ def raw_log_to_checkin_transaction(input_file, user_index, time_index, POI_index
     with codecs.open(output_file, 'w') as fw:
         for user in user_logs:
             for date in user_logs[user]:
-                fw.write(user)
-                for time in user_logs[user][date]:
-                    fw.write('\t' + '(' + str(time) + ',' + user_logs[user][date][time] + ')')
+                fw.write(user + '\t' + date)
+                od = collections.OrderedDict(sorted(user_logs[user][date].items()))
+                for key in od:
+                    fw.write('\t' + '(' + str(key) + ',' +od[key] + ')')
 
                 fw.write('\n')
 
@@ -103,7 +106,7 @@ if __name__ == '__main__':
     test_file = '../data/SG_foursquare/test.txt'
 
     #convert_time(train_file, 'train.txt')
-    convert_time(test_file, 'test.txt')
+    #convert_time(test_file, 'test.txt')
     #load_raw_logs('train.txt', 'SG_time_train.dat', 'poi_to_position.dat', 0, -2, 1, 2)
     #load_raw_logs('test.txt', 'SG_time_test.dat', 'delete.dat', 0, -2, 1, 2)
 

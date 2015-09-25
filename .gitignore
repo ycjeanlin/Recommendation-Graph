@@ -11,3 +11,4 @@ poidata/
 .idea/*
 data/*
 tmp*
+*.matrix

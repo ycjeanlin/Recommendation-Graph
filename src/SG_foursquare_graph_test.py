@@ -1,6 +1,7 @@
 import pickle
 import operator
 import codecs
+import math
 
 
 def decode_time(encoded_time):
@@ -11,19 +12,19 @@ def decode_time(encoded_time):
 
 
 def user_phase(graph, node_id, time):
-
     pois = graph.neighbors(node_id)
     max_vote = float(len(pois))
     voters = {}
     for poi in pois:
+        poi_degree = graph.degree(poi)
         for n in graph.neighbors(poi):
             if (graph.node[n]['type'] == 'session' and graph.node[n]['time'] != time):
                 continue
             else:
                 if n in voters:
-                    voters[n] += 1
+                    voters[n] += math.log(1 + poi_degree)
                 else:
-                    voters[n] = 1
+                    voters[n] = math.log(1 + poi_degree)
 
     scores = {}
     for voter in voters:
@@ -31,11 +32,11 @@ def user_phase(graph, node_id, time):
         similarity = voters[voter]
         for poi in pois:
             if poi in scores:
-                #scores[poi] += similarity / max_vote
-                scores[poi] += 1
+                scores[poi] += similarity / math.sqrt(max_vote * graph.degree(voter))
+                #scores[poi] += 1
             else:
-                #scores[poi] = similarity / max_vote
-                scores[poi] = 1
+                scores[poi] = similarity / math.sqrt(max_vote * graph.degree(voter))
+                #scores[poi] = 1
 
     return scores
 
@@ -63,11 +64,11 @@ def session_phase(graph, node_id, time):
             similarity = voters[voter]
             for poi in pois:
                 if poi in scores:
-                    #scores[poi] += similarity / max_vote
-                    scores[poi] += 1
+                    scores[poi] += similarity / max_vote
+                    #scores[poi] += 1
                 else:
-                    #scores[poi] = similarity / max_vote
-                    scores[poi] = 1
+                    scores[poi] = similarity / max_vote
+                    #scores[poi] = 1
 
     return scores
 
@@ -125,8 +126,8 @@ if __name__ == '__main__':
 
             #try:
             user_scores = user_phase(foursquare_graph, user, t)
-            session_scores = session_phase(foursquare_graph, user, t)
-
+            #session_scores = session_phase(foursquare_graph, user, t)
+            '''
             poi_scores = {}
             if len(session_scores) > 0:
                 for poi in user_scores:
@@ -136,7 +137,8 @@ if __name__ == '__main__':
                         poi_scores[poi] = user_scores[poi]
             else:
                 poi_scores = user_scores
-
+            '''
+            poi_scores = user_scores
             sorted_scores = sorted(poi_scores.items(), key=operator.itemgetter(1), reverse=True)
             total[t] += 5
             hit = 0

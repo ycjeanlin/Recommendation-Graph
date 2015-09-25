@@ -49,7 +49,7 @@ def load_hash_file(hash_file):
 def create_graph(user_logs, poi_hash):
     print('Graph creating')
     graph = nx.Graph()
-
+    '''
     print('Session vs place')
     index = 0
     for user in user_logs:
@@ -65,7 +65,7 @@ def create_graph(user_logs, poi_hash):
                     graph.add_node(poi, type='poi', pos=poi_hash[poi])
 
                 graph.add_edge(user + '_' + str(t), poi)
-
+    '''
     print('User vs category')
     index = 0
     for user in user_logs:
