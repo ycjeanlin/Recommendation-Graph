@@ -101,6 +101,7 @@ def load_graph(filename):
         graph = pickle.load(fp)
     return graph
 
+
 if __name__ == '__main__':
     model = 'SG_foursquare.graph'
     test_file = 'SG_time_test.dat'

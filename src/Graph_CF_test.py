@@ -32,6 +32,24 @@ def load_raw_logs(input_file, user_index, POI_index):
     return train
 
 
+def item_phase(graph, node_id):
+    pois = graph.neighbors(node_id)
+    max_vote = float(len(pois))
+    w_pois = {}
+    for poi in pois:
+        if poi not in w_pois:
+            w_pois[poi] = {}
+        poi_degree = graph.degree(poi)
+        for n in graph.neighbors(poi):
+            for new_poi in graph.neighbors(n):
+                if poi == new_poi:
+                    continue
+
+                if new_poi not in w_pois[poi]:
+                    w_pois[poi][new_poi] = 0
+                w_pois[poi][new_poi] += 1
+
+
 def user_phase(graph, node_id):
     pois = graph.neighbors(node_id)
     max_vote = float(len(pois))

@@ -26,7 +26,7 @@ def load_raw_logs(input_file, user_index, POI_index):
     return train
 
 
-def create_graph(user_log):
+def create_user_graph(user_log):
     print('Graph creating')
     graph = nx.Graph()
 
@@ -40,6 +40,20 @@ def create_graph(user_log):
 
     return graph
 
+
+def create_item_graph(user_log):
+    print('Graph creating')
+    graph = nx.Graph()
+
+    print('User vs category')
+    for user in user_logs:
+        graph.add_node(user)
+        for item in user_logs[user].keys():
+            if item not in graph.nodes():
+                graph.add_node(item)
+            graph.add_edge(user, item)
+
+    return graph
 
 
 def write_graph(graph, filename):
