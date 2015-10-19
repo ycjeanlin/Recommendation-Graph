@@ -68,6 +68,9 @@ def propagation(graph, node_id):
 
             triggered_pois[poi] =+ similarity
 
+    for poi in triggered_pois:
+        triggered_pois[poi] = triggered_pois[poi] / graph.degree(poi)
+
     return triggered_pois
 
 
