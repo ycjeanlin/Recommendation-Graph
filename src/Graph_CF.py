@@ -5,7 +5,7 @@ import networkx as nx
 import time
 
 
-def load_raw_logs(input_file, user_index, POI_index):
+def load_raw_logs(input_file, user_index, item_index):
     with codecs.open(input_file, 'r') as fr:
         train = {}
         index = 0
@@ -15,7 +15,7 @@ def load_raw_logs(input_file, user_index, POI_index):
             if index % 10000 == 0:
                 print(index)
             user = cols[user_index]
-            item = cols[POI_index]
+            item = cols[item_index]
             if  user not in train:
                 train[user] = {}
                 train[user][item] = 1
@@ -63,12 +63,12 @@ def write_graph(graph, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/SG_foursquare/train.txt'
-    graph_file = 'SG.graph'
+    train_file = '../data/MovieLens/train.dat'
+    graph_file = 'MovieLens.graph'
 
     user_logs = load_raw_logs(train_file, 0, 1)
     start_time = time.time()
-    SG_graph = create_graph(user_logs)
+    SG_graph = create_user_graph(user_logs)
     end_time = time.time()
     write_graph(SG_graph, graph_file)
     print("--- %s seconds ---" % (end_time - start_time))
