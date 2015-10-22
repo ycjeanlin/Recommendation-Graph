@@ -60,11 +60,12 @@ if __name__ == '__main__':
         user_percentage = {}
         user_miss = {}
         for user in test_logs:
+            print(user)
             related_users = propagation(recommend_graph, user)
 
             sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
 
-            num_hit = int(len(test_logs[user] * poi_coverage))
+            num_hit = int(len(test_logs[user]) * poi_coverage)
             help_user = 0
             num_user = len(sorted_users)
             for poi in test_logs[user]:
@@ -80,7 +81,7 @@ if __name__ == '__main__':
                     break
 
         for user in user_percentage:
-            fw.write(user + '\t' + user_percentage[user] + '\t' + user_miss[user] + '\n')
+            fw.write(user + '\t' + str(user_percentage[user]) + '\t' + str(user_miss[user]) + '\n')
 
 
     fig = plt.figure()
