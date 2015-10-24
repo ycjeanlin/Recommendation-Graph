@@ -42,26 +42,14 @@ def propagation(graph, node_id):
 
     return voters
 
-
-if __name__ == '__main__':
-    test_file = '../data/MovieLens/test.dat'
-    graph_file = 'MovieLens.graph'
-    output_file = 'user_coverage.dat'
-
-    recommend_graph = load_graph(graph_file)
-
-    test_logs = load_raw_logs(test_file, 0, 1)
-
-    num_poi_dist = []
-    max_poi_dist = []
+def exp1(graph, logs):
     with codecs.open(output_file, 'w') as fw:
         poi_coverage = 0.8
-        n_recall = 0
         user_percentage = {}
         user_miss = {}
-        for user in test_logs:
+        for user in logs:
             print(user)
-            related_users = propagation(recommend_graph, user)
+            related_users = propagation(graph, user)
 
             sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -76,19 +64,55 @@ if __name__ == '__main__':
                         break
 
                 if num_hit == 0 or help_user == num_user:
-                    user_percentage[user] = help_user/num_user
-                    user_miss[user] = float((len(test_logs[user]) - num_hit) / len(test_logs[user]))
+                    user_percentage[user] = float(sorted_users[help_user-1][1])/float(sorted_users[0][1])
+                    #user_percentage[user] = help_user/float(num_user)
+                    user_miss[user] = float(len(test_logs[user]) - (len(test_logs[user]) * poi_coverage - num_hit)) / len(test_logs[user])
                     break
 
         for user in user_percentage:
             fw.write(user + '\t' + str(user_percentage[user]) + '\t' + str(user_miss[user]) + '\n')
 
 
-    fig = plt.figure()
     fig, (ax1, ax2) = plt.subplots(2, 1, sharey=True)
     ax1.hist(list(user_percentage.values()))
     ax2.hist(list(user_miss.values()))
 
     plt.show()
+
+
+def exp2(graph, logs):
+    with codecs.open(output_file) as fw:
+        for user in logs:
+            print(user)
+            related_users = propagation(graph, user)
+
+            sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
+            distribution = []
+            for i in range(len(sorted_users)):
+                num_hit = 0
+                for poi in logs(user):
+                    if graph.has_edge(sorted_users[i][0], poi):
+                        num_hit += 1
+
+                distribution.append(str(float(num_hit / len(logs[user]))))
+
+            fw.write(user + distribution.join('\t') + '\n')
+
+
+
+
+if __name__ == '__main__':
+    test_file = '../data/MovieLens/test.dat'
+    graph_file = 'MovieLens.graph'
+    output_file = 'user_coverage.dat'
+
+    recommend_graph = load_graph(graph_file)
+
+    test_logs = load_raw_logs(test_file, 0, 1)
+
+    #exp1(recommend_graph,test_logs)
+    exp2(recommend_graph, test_logs)
+
+
 
     print('Mission Complete')

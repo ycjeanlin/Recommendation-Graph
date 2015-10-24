@@ -108,7 +108,7 @@ def session_phase(graph, node_id, time):
 
 
 if __name__ == '__main__':
-    model = 'foursquare_SG.graph'
+    model = 'foursquare_SG_1.graph'
     test_file = 'SG_time_test.dat'
 
     print('Graph loading')
