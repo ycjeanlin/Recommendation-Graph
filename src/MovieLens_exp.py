@@ -80,25 +80,29 @@ def exp1(graph, logs):
     plt.show()
 
 
-def exp2(graph, logs):
-    with codecs.open(output_file) as fw:
+def exp2(graph, logs, out_file):
+    with codecs.open(out_file, 'w') as fw:
+        index = 0
         for user in logs:
-            print(user)
+            index += 1
+            if (index % 100) == 0:
+                print(index)
+
+            pois = logs[user]
             related_users = propagation(graph, user)
 
             sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
             distribution = []
-            for i in range(len(sorted_users)):
+            for i in range(1, len(sorted_users)): #exclude user himself
                 num_hit = 0
-                for poi in logs(user):
+                for poi in pois:
                     if graph.has_edge(sorted_users[i][0], poi):
                         num_hit += 1
 
-                distribution.append(str(float(num_hit / len(logs[user]))))
+                distribution.append(float(num_hit / len(logs[user])))
 
-            fw.write(user + distribution.join('\t') + '\n')
-
-
+            out_str = '\t'.join(format(x, "10.3f") for x in distribution)
+            fw.write(user + '\t' + out_str + '\n')
 
 
 if __name__ == '__main__':
@@ -111,7 +115,7 @@ if __name__ == '__main__':
     test_logs = load_raw_logs(test_file, 0, 1)
 
     #exp1(recommend_graph,test_logs)
-    exp2(recommend_graph, test_logs)
+    exp2(recommend_graph, test_logs, output_file)
 
 
 

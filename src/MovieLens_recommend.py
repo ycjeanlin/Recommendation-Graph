@@ -101,21 +101,21 @@ def cal_entropy(dist):
     return entropy / count
 
 if __name__ == '__main__':
-    train_file = '../data/SG_foursquare/train.txt'
-    test_file = '../data/SG_foursquare/test.txt'
-    graph_file = 'foursquare_SG.graph'
+    train_file = '../data/MovieLens/train.dat'
+    test_file = '../data/MovieLens/test.dat'
+    graph_file = 'MovieLens.graph'
     output_file = 'exp_result.dat'
 
     recommend_graph = load_graph(graph_file)
 
-    #train_logs = load_raw_logs(train_file, 0, 1)
+    train_logs = load_raw_logs(train_file, 0, 1)
     test_logs = load_raw_logs(test_file, 0, 1)
 
     data_x1 = []
     data_x2 = []
     with codecs.open(output_file, 'w') as fw:
 
-        for p in range(20):
+        for p in range(1):
             top_p = 0.1 + p * 0.01
             print('====== ', str(p), ' ======')
             n_precision = 0
@@ -123,13 +123,14 @@ if __name__ == '__main__':
             n_hit = 0
             topk = 5
             index = 0
-            for user in test_logs:
+            for user in train_logs:
                 index += 1
+                #print(user)
                 if((index % 100) == 0):
                     print(index)
                     print(user, hit, len(test_logs[user]))
                     print('Precision:', float(n_hit) / float(n_precision))
-                    print('Recall:', float(n_hit) / float(n_recall))
+                    print('Recall:', float(n_recall / len(test_logs)))
 
                 item_score = propagation(recommend_graph, user, top_p)
 
@@ -137,25 +138,30 @@ if __name__ == '__main__':
 
                 hit = 0
                 for i in range(topk):
-                    if sorted_pois[i][0] in test_logs[user]:
-                        hit += 1
-
+                    fw.write(sorted_pois[i][0] + '\t' + str(sorted_pois[i][1]) + '\n')
+                    try:
+                        if sorted_pois[i][0] in test_logs[user]:
+                            hit += 1
+                    except KeyError:
+                        print(user, ' not found')
                 '''
+                print('Real')
                 for poi in test_logs[user]:
                     try:
-                        print(poi, item_score[poi], sorted_pois[0][1])
+                        print(poi, item_score[poi])
                     except KeyError:
                         print(poi, ' not found')
                 '''
                 n_precision += topk
-                n_recall += len(test_logs[user])
+                if hit > 0:
+                    n_recall += 1
                 n_hit += hit
-            data_x1.append((top_p, float(n_hit) / float(n_precision)))
-            data_x2.append((top_p, float(n_hit) / float(n_recall)))
-            fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_precision)))
-            fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_recall)))
+            data_x1.append((top_p, float(n_hit / n_precision)))
+            data_x2.append((top_p, float(n_recall / len(test_logs))))
+            #fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_precision)))
+            #fw.write(str(top_p) + '\t' + str(float(n_recall / len(test_logs))))
             print('Precision:', float(n_hit) / float(n_precision))
-            print('Recall:', float(n_hit) / float(n_recall))
+            print('Recall:', float(n_recall / len(test_logs)))
 
 
 
