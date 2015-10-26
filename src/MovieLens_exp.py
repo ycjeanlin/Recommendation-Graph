@@ -42,6 +42,39 @@ def propagation(graph, node_id):
 
     return voters
 
+
+def recommend(graph, node_id, top_p):
+    pois = graph.neighbors(node_id)
+    voters = {}
+    for poi in pois:
+        neighbor_list = graph.neighbors(poi)
+
+        for n in neighbor_list:
+            if n not in voters:
+                voters[n] = 0
+            voters[n] += 1
+
+    sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
+
+    triggered_pois = {}
+    threshold = int(len(sorted_voters) * top_p)
+    for v in range(threshold):
+        if sorted_voters[v][0] == node_id :
+            continue
+
+        for poi in graph.neighbors(sorted_voters[v][0]):
+
+            if poi in graph.neighbors(node_id):
+                continue
+
+            if poi not in triggered_pois:
+                triggered_pois[poi] = 0
+
+            triggered_pois[poi] += 1
+
+    return triggered_pois
+
+
 def exp1(graph, logs):
     with codecs.open(output_file, 'w') as fw:
         poi_coverage = 0.8
@@ -105,6 +138,39 @@ def exp2(graph, logs, out_file):
             fw.write(user + '\t' + out_str + '\n')
 
 
+def exp3(input_file, graph, topk):
+    hit = 0
+    total = 0
+    with codecs.open(input_file, 'r') as fr:
+        for row in fr:
+            # load test file
+            total += 1
+            cols = row.strip().split('\t')
+            user = cols[0]
+            target_item = cols[1]
+
+            # make recommendation for test user
+            poi_scores = recommend(graph, user, 0.2)
+
+            # rank the 1001 items within 1000 tested items
+            test_item_score = {}
+            for i in range(1, len(cols)):
+                try:
+                    test_item_score[cols[i]] = poi_scores[cols[i]]
+                except:
+                    test_item_score[cols[i]] = 0
+
+            # check the target item whether it is in topk or not
+            sorted_items = sorted(test_item_score.items(), key=operator.itemgetter(1), reverse=True)
+            for i in range(topk):
+                if target_item == sorted_items[i][0]:
+                    hit += 1
+                    break
+    # Calculate recall of long-tail items
+    print('Recall: ', float(hit / total))
+    return float(hit / total)
+
+
 if __name__ == '__main__':
     test_file = '../data/MovieLens/test.dat'
     graph_file = 'MovieLens.graph'
@@ -115,7 +181,8 @@ if __name__ == '__main__':
     test_logs = load_raw_logs(test_file, 0, 1)
 
     #exp1(recommend_graph,test_logs)
-    exp2(recommend_graph, test_logs, output_file)
+    #exp2(recommend_graph, test_logs, output_file)
+    exp3(test_file, )
 
 
 

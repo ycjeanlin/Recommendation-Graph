@@ -115,7 +115,7 @@ if __name__ == '__main__':
     data_x2 = []
     with codecs.open(output_file, 'w') as fw:
 
-        for p in range(1):
+        for p in range(20):
             top_p = 0.1 + p * 0.01
             print('====== ', str(p), ' ======')
             n_precision = 0
@@ -126,11 +126,11 @@ if __name__ == '__main__':
             for user in train_logs:
                 index += 1
                 #print(user)
-                if((index % 100) == 0):
+                if((index % 1000) == 0):
                     print(index)
                     print(user, hit, len(test_logs[user]))
                     print('Precision:', float(n_hit) / float(n_precision))
-                    print('Recall:', float(n_recall / len(test_logs)))
+                    print('Recall:', float(n_hit / n_recall))
 
                 item_score = propagation(recommend_graph, user, top_p)
 
@@ -153,15 +153,14 @@ if __name__ == '__main__':
                         print(poi, ' not found')
                 '''
                 n_precision += topk
-                if hit > 0:
-                    n_recall += 1
+                n_recall += len(test_logs[user])
                 n_hit += hit
+
             data_x1.append((top_p, float(n_hit / n_precision)))
-            data_x2.append((top_p, float(n_recall / len(test_logs))))
-            #fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_precision)))
-            #fw.write(str(top_p) + '\t' + str(float(n_recall / len(test_logs))))
-            print('Precision:', float(n_hit) / float(n_precision))
-            print('Recall:', float(n_recall / len(test_logs)))
+            data_x2.append((top_p, float(n_hit / n_recall)))
+            fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_precision)) + '\t' + str(float(n_hit / n_recall)) + '\n')
+            #print('Precision:', float(n_hit) / float(n_precision))
+            #print('Recall:', float(n_hit / n_recall))
 
 
 
@@ -173,7 +172,6 @@ if __name__ == '__main__':
 
     '''
 
-    fig = plt.figure()
     fig, (ax1, ax2) = plt.subplots(2, 1, sharey=True)
     x = [data_x1[i][0] for i in range(len(data_x1))]
     y = [data_x1[i][1] for i in range(len(data_x1))]
