@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
     #exp1(recommend_graph,test_logs)
     #exp2(recommend_graph, test_logs, output_file)
-    exp3(test_file, )
+    exp3(test_file, recommend_graph, 5)
 
 
 
