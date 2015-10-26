@@ -30,6 +30,23 @@ def load_raw_logs(input_file, user_index, POI_index):
 
     return train
 
+def load_logs(input_file, user_index, item_index):
+    with codecs.open(input_file, 'r') as fr:
+        train = {}
+        index = 0
+        for row in fr:
+            cols = row.strip().split('\t')
+            index += 1
+            if index % 10000 == 0:
+                print(index)
+            user = cols[user_index]
+            item = cols[item_index]
+            if  user not in train:
+                train[user] = set()
+
+            train[user].add(item)
+
+    return train
 
 def recommend(user, train, W):
     rank = {}
@@ -46,16 +63,42 @@ def recommend(user, train, W):
 
 
 if __name__ == '__main__':
-    train_file = '../data/SG_foursquare/train.txt'
-    matrix_file = 'SG.matrix'
+    train_file = '../data/MovieLens/train.dat'
+    test_file = '../data/MovieLens/test.dat'
+    matrix_file = 'MovieLens.matrix'
 
-    user_logs = load_raw_logs(train_file, 0, 1)
+    train_logs = load_raw_logs(train_file, 0, 1)
+    test_logs = load_logs(test_file, 0, 1)
     similarity = load_matrix(matrix_file)
     start_time =time.time()
-    for user in user_logs:
-        print(user)
-        scores = recommend(user, user_logs, similarity)
+    n_precision = 0
+    n_recall = 0
+    n_hit = 0
+    topk = 5
+    index = 0
+    for user in train_logs:
+        index += 1
+        #print(user)
+        if((index % 100) == 0):
+            print(index)
+            print(user, hit, len(test_logs[user]))
+            print('Precision:', float(n_hit) / float(n_precision))
+            print('Recall:', float(n_hit / n_recall))
+
+        scores = recommend(user, train_logs, similarity)
         sorted_scores = sorted(scores.items(), key=operator.itemgetter(1), reverse=True)
+
+        hit = 0
+        for i in range(topk):
+            try:
+                if sorted_scores[i][0] in test_logs[user]:
+                    hit += 1
+            except KeyError:
+                print(user, ' not found')
+
+        n_precision += topk
+        n_recall += len(test_logs[user])
+        n_hit += hit
 
     end_time = time.time()
     print("--- %s seconds ---" % (end_time - start_time))

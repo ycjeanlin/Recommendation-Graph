@@ -76,11 +76,11 @@ def write_matrix(W, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/SG_foursquare/train.txt'
+    train_file = '../data/MovieLens/train.dat'
 
     user_logs = load_raw_logs(train_file, 0, 1)
     start_time = time.time()
     similarity = user_similarity(user_logs)
     end_time = time.time()
-    write_matrix(similarity, 'SG.matrix')
+    write_matrix(similarity, 'MovieLens.matrix')
     print("--- %s seconds ---" % (end_time - start_time))
