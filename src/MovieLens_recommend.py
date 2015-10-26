@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
                 hit = 0
                 for i in range(topk):
-                    fw.write(sorted_pois[i][0] + '\t' + str(sorted_pois[i][1]) + '\n')
+                    #fw.write(sorted_pois[i][0] + '\t' + str(sorted_pois[i][1]) + '\n')
                     try:
                         if sorted_pois[i][0] in test_logs[user]:
                             hit += 1
