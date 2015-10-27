@@ -63,8 +63,8 @@ def write_graph(graph, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/SG_foursquare/train.txt'
-    graph_file = 'foursquare_SG.graph'
+    train_file = '../data/MovieLens/train.dat'
+    graph_file = 'MovieLens.graph'
 
     user_logs = load_raw_logs(train_file, 0, 1)
     start_time = time.time()
