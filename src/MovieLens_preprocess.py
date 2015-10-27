@@ -77,12 +77,12 @@ def choose_long_tail_items(item_actives):
 
     sorted_items = sorted(user_counts.items(), key = operator.itemgetter(1), reverse=True)
     #print(sorted_items[int(len(sorted_items) * 0.9)][0], sorted_items[int(len(sorted_items) * 0.9)][1], len(sorted_items)-1)
-    indices = [i for i in range(int(len(sorted_items) * 0.2), int(len(sorted_items) * 0.9))]
     total_count_20 = int(0.2 * total_count)
     movie_count = len(sorted_items) - 1
     candidate_items = []
     for i in range(movie_count):
         if total_count_20 > 0:
+            assert sorted_items[movie_count - i][1] <= sorted_items[movie_count - i - 1][1], "Sorting Error"
             candidate_items.append(sorted_items[movie_count - i][0])
             total_count_20 -= sorted_items[movie_count - i][1]
         else:
