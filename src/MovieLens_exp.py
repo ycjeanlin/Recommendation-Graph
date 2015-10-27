@@ -2,6 +2,7 @@ import pickle
 import codecs
 import operator
 import matplotlib.pyplot as plt
+from math import sqrt
 
 
 def load_graph(filename):
@@ -34,11 +35,11 @@ def propagation(graph, node_id):
     voters = {}
     for poi in pois:
         neighbor_list = graph.neighbors(poi)
-
+        punish = float(len(neighbor_list))
         for n in neighbor_list:
             if n not in voters:
                 voters[n] = 0
-            voters[n] += 1
+            voters[n] += 1 / punish
 
     return voters
 
@@ -51,8 +52,12 @@ def recommend(graph, node_id, top_p):
 
         for n in neighbor_list:
             if n not in voters:
-                voters[n] = 0
+                voters[n] = 0.0
             voters[n] += 1
+
+    for v in voters:
+        voters[v] = float(voters[v] / len(graph.neighbors(v)))
+
 
     sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -75,7 +80,7 @@ def recommend(graph, node_id, top_p):
     return triggered_pois
 
 
-def exp1(graph, logs):
+def exp1(graph, logs, output_file):
     with codecs.open(output_file, 'w') as fw:
         poi_coverage = 0.8
         user_percentage = {}
@@ -146,14 +151,14 @@ def exp3(input_file, graph, topk):
             # load test file
             total += 1
             if (total % 100) == 0:
-                print(total)
+                print(total, hit)
 
             cols = row.strip().split('\t')
             user = cols[0]
             target_item = cols[1]
 
             # make recommendation for test user
-            poi_scores = recommend(graph, user, 0.2)
+            poi_scores = recommend(graph, user, 0.15)
 
             # rank the 1001 items within 1000 tested items
             test_item_score = {}
@@ -166,6 +171,7 @@ def exp3(input_file, graph, topk):
             # check the target item whether it is in topk or not
             sorted_items = sorted(test_item_score.items(), key=operator.itemgetter(1), reverse=True)
             for i in range(topk):
+                print(poi_scores[target_item], sorted_items[i][1])
                 if target_item == sorted_items[i][0]:
                     hit += 1
                     break
@@ -173,11 +179,37 @@ def exp3(input_file, graph, topk):
     print('Recall: ', float(hit / total))
     return float(hit / total)
 
+def exp4(input_file, graph, output_file):
+    with codecs.open(input_file, 'r') as fr:
+        fw = codecs.open(output_file, 'w')
+        index = 0
+        for row in fr:
+
+            index += 1
+            if (index % 100) == 0:
+                print(index)
+
+            # load test file
+            cols = row.strip().split('\t')
+            user = cols[0]
+            target_item = cols[2]
+
+            related_users = propagation(graph, user)
+            sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
+            top_20_user = int(len(sorted_users) * 0.2)
+
+            #user_items = len(graph.neighbors(user))
+            fw.write(user)
+            for i in range(top_20_user):
+                #check whether has relation with target item
+                if graph.has_edge(sorted_users[i][0], target_item):
+                    fw.write('\t' + str(float(sorted_users[i][1])))
+            fw.write('\n')
 
 if __name__ == '__main__':
     test_file = '../data/MovieLens/test.dat'
-    graph_file = 'MovieLens.graph'
-    #output_file = 'user_coverage.dat'
+    graph_file = 'MovieLens_1M.graph'
+    output_file = 'user_coverage.dat'
 
     recommend_graph = load_graph(graph_file)
 
@@ -186,6 +218,7 @@ if __name__ == '__main__':
     #exp1(recommend_graph,test_logs)
     #exp2(recommend_graph, test_logs, output_file)
     exp3(test_file, recommend_graph, 5)
+    #exp4(test_file, recommend_graph, 'exp4_result.dat')
 
 
 

@@ -5,15 +5,12 @@ import random
 
 
 def load_raw_logs(input_file, user_index, movie_index, rating_index):
+    print('Load raw logs')
     with codecs.open(input_file, 'r') as fr:
-        index = 0
         item_logs = {}
         movie_fans = {}
         for row in fr:
             cols = row.strip().split('::')
-            index += 1
-            if index % 10000 == 0:
-                print(index)
 
             user = cols[user_index]
             item = cols[movie_index]
@@ -30,14 +27,11 @@ def load_raw_logs(input_file, user_index, movie_index, rating_index):
 
 
 def load_user_logs(input_file, user_index, movie_index):
+    print('Load user logs')
     with codecs.open(input_file, 'r') as fr:
-        index = 0
         logs = {}
         for row in fr:
             cols = row.strip().split('::')
-            index += 1
-            if index % 10000 == 0:
-                print(index)
 
             user = cols[user_index]
             item = cols[movie_index]
@@ -109,17 +103,32 @@ def choose_test_users(fans, items):
 def test_logs_gen(test_set, user_logs, item_set, out_file):
     with codecs.open(out_file, 'w') as fw:
         for user in test_set:
-            output_set = set()
-            output_set.add(test_set[user])
+            output_set = []
+            output_set.append(test_set[user])
             random_items = []
             for item in item_set:
                 if item not in user_logs[user]:
                     random_items.append(item)
 
-            for i in sorted(random.sample(range(len(random_items)), 1000)):
-                output_set.add(random_items[i])
+            for i in random.sample(range(len(random_items)), 1000):
+                assert (random_items[i] not in output_set), "Duplicate items"
+                output_set.append(random_items[i])
 
-            fw.write(user + '\t' + ('\t').join(list(output_set)) + '\n')
+            assert (test_set[user] == output_set[0])
+            fw.write(user + '\t' + ('\t').join(output_set) + '\n')
+
+
+def train_logs_gen(test_set, user_logs, out_file):
+    with codecs.open(out_file, 'w') as fw:
+        for user in user_logs:
+            output_set = user_logs[user]
+            # eliminate  test set from user logs
+            if user in test_set:
+                output_set.remove(test_set[user])
+
+            # output to train data
+            for item in output_set:
+                fw.write(user + '\t' + item + '\n')
 
 if __name__ == '__main__':
     item_activity_all, candidate_users = load_raw_logs('../data/MovieLens/ratings.dat', 0, 1, 2)
@@ -129,5 +138,8 @@ if __name__ == '__main__':
     print(len(test_users))
 
     test_logs_gen(test_users, user_activity_all, item_activity_all.keys(), '../data/MovieLens/test.dat')
+    train_logs_gen(test_users, user_activity_all, '../data/MovieLens/train.dat')
     #split_train_test(user_activity_all, '../data/MovieLens/train.dat', '../data/MovieLens/test.dat')
+
+    print('Mission Complete')
 
