@@ -145,6 +145,9 @@ def exp3(input_file, graph, topk):
         for row in fr:
             # load test file
             total += 1
+            if (total % 100) == 0:
+                print(total)
+
             cols = row.strip().split('\t')
             user = cols[0]
             target_item = cols[1]
@@ -174,7 +177,7 @@ def exp3(input_file, graph, topk):
 if __name__ == '__main__':
     test_file = '../data/MovieLens/test.dat'
     graph_file = 'MovieLens.graph'
-    output_file = 'user_coverage.dat'
+    #output_file = 'user_coverage.dat'
 
     recommend_graph = load_graph(graph_file)
 
@@ -182,7 +185,7 @@ if __name__ == '__main__':
 
     #exp1(recommend_graph,test_logs)
     #exp2(recommend_graph, test_logs, output_file)
-    exp3(test_file, )
+    exp3(test_file, recommend_graph, 5)
 
 
 
