@@ -102,21 +102,21 @@ def cal_entropy(dist):
 
 if __name__ == '__main__':
     train_file = '../data/MovieLens/train.dat'
-    test_file = '../data/MovieLens/test.dat'
+    #test_file = '../data/MovieLens/test.dat'
     graph_file = 'MovieLens.graph'
-    output_file = 'exp_result.dat'
+    output_file = 'recsys_result.dat'
 
     recommend_graph = load_graph(graph_file)
 
     train_logs = load_raw_logs(train_file, 0, 1)
-    test_logs = load_raw_logs(test_file, 0, 1)
+    #test_logs = load_raw_logs(test_file, 0, 1)
 
     data_x1 = []
     data_x2 = []
     with codecs.open(output_file, 'w') as fw:
 
-        for p in range(20):
-            top_p = 0.1 + p * 0.01
+        for p in range(1,2):
+            top_p = 0.1 + p * 0.05
             print('====== ', str(p), ' ======')
             n_precision = 0
             n_recall = 0
@@ -128,37 +128,44 @@ if __name__ == '__main__':
                 #print(user)
                 if((index % 1000) == 0):
                     print(index)
-                    print(user, hit, len(test_logs[user]))
-                    print('Precision:', float(n_hit) / float(n_precision))
-                    print('Recall:', float(n_hit / n_recall))
+                    #print(user, hit, len(test_logs[user]))
+                    #print('Precision:', float(n_hit) / float(n_precision))
+                    #print('Recall:', float(n_hit / n_recall))
 
                 item_score = propagation(recommend_graph, user, top_p)
 
                 sorted_pois = sorted(item_score.items(), key=operator.itemgetter(1), reverse=True)
 
+                fw.write(user)
+                for i in range(topk):
+                    fw.write('\t' + sorted_pois[i][0])
+                fw.write('\n')
+
+                '''
                 hit = 0
                 for i in range(topk):
-                    #fw.write(sorted_pois[i][0] + '\t' + str(sorted_pois[i][1]) + '\n')
+                    fw.write(sorted_pois[i][0] + '\t' + str(sorted_pois[i][1]) + '\n')
                     try:
                         if sorted_pois[i][0] in test_logs[user]:
                             hit += 1
                     except KeyError:
                         print(user, ' not found')
-                '''
+
                 print('Real')
                 for poi in test_logs[user]:
                     try:
                         print(poi, item_score[poi])
                     except KeyError:
                         print(poi, ' not found')
-                '''
+
                 n_precision += topk
                 n_recall += len(test_logs[user])
                 n_hit += hit
+                '''
 
-            data_x1.append((top_p, float(n_hit / n_precision)))
-            data_x2.append((top_p, float(n_hit / n_recall)))
-            fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_precision)) + '\t' + str(float(n_hit / n_recall)) + '\n')
+            #data_x1.append((top_p, float(n_hit / n_precision)))
+            #data_x2.append((top_p, float(n_hit / n_recall)))
+            #fw.write(str(top_p) + '\t' + str(float(n_hit) / float(n_precision)) + '\t' + str(float(n_hit / n_recall)) + '\n')
             #print('Precision:', float(n_hit) / float(n_precision))
             #print('Recall:', float(n_hit / n_recall))
 
@@ -170,7 +177,7 @@ if __name__ == '__main__':
                     if n in item_dist:
                         data_x.append(item_dist[n])
 
-    '''
+
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharey=True)
     x = [data_x1[i][0] for i in range(len(data_x1))]
@@ -185,6 +192,6 @@ if __name__ == '__main__':
     ax2.set_xlabel('Recall')
 
     plt.show()
-
+    '''
 
     print('Mission Complete')

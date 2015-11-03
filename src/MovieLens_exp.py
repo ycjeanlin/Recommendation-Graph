@@ -206,8 +206,21 @@ def exp4(input_file, graph, output_file):
                     fw.write('\t' + str(float(sorted_users[i][1])))
             fw.write('\n')
 
+def exp5(graph, logs):
+    with codecs.open('exp5_result.txt', 'w') as fw:
+        for u in logs:
+            print(u)
+            activeness = len(logs[u])
+            for item in logs[u]:
+                try:
+                    popularity = graph.degree(item)
+                    fw.write(str(activeness) + '\t' + str(popularity) + '\n')
+                except:
+                    print('Error')
+
+
 if __name__ == '__main__':
-    test_file = '../data/MovieLens/test.dat'
+    test_file = '../data/MovieLens/train.dat'
     graph_file = 'MovieLens_1M.graph'
     output_file = 'user_coverage.dat'
 
@@ -217,8 +230,9 @@ if __name__ == '__main__':
 
     #exp1(recommend_graph,test_logs)
     #exp2(recommend_graph, test_logs, output_file)
-    exp3(test_file, recommend_graph, 5)
+    #exp3(test_file, recommend_graph, 5)
     #exp4(test_file, recommend_graph, 'exp4_result.dat')
+    exp5(recommend_graph, test_logs)
 
 
 
