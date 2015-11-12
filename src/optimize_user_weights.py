@@ -3,44 +3,39 @@ from scipy.stats import chi2
 import pickle
 
 
-def load_user_logs(input_file):
-    print('Load user logs')
+def load_test_logs(input_file, user_index, item_index):
+    print('Load test logs')
     with codecs.open(input_file, 'r') as fr:
         logs = {}
         for row in fr:
             cols = row.strip().split('\t')
 
-            user = cols[0]
-            for i in range(1, len(cols)):
-                if 'u_' + user not in logs:
-                    logs['u_' + user] = set()
+            user = cols[user_index]
+            item = cols[item_index]
 
-                logs['u_' + user].add('i_' + cols[i])
+            if user not in logs:
+                logs[user] = []
+
+            logs[user].append(item)
 
     return logs
 
 
 
-def load_raw_logs(test, input_file, user_index, item_index, rating_index):
-    print('Load user logs')
+def load_train_logs(input_file, user_index, item_index, rating_index):
+    print('Load train logs')
     with codecs.open(input_file, 'r') as fr:
         train = {}
-        index = 0
         for row in fr:
-            cols = row.strip().split('::')
+            cols = row.strip().split('\t')
 
-            index += 1
-            if index % 10000 == 0:
-                print(index)
-
-            user = 'u_' + cols[user_index]
-            item = 'i_' + cols[item_index]
+            user = cols[user_index]
+            item = cols[item_index]
             rating = float(cols[rating_index])
             if  user not in train:
                 train[user] = {}
-                train[user][item] = rating
 
-            if item not in train[user] and item not in test[user]:
+            if item not in train[user]:
                 train[user][item] = rating
 
     return train
@@ -59,7 +54,12 @@ def cal_user_weights(ratings, alpha):
     print('Calculate co-rated items between users')
     C = {}
     N = {}
+    index = 0
     for i, users in item_users.items():
+        index += 1
+        if index % 100 == 0:
+            print(index)
+
         for u in users:
             for v in users:
                 if  u == v:
@@ -67,12 +67,10 @@ def cal_user_weights(ratings, alpha):
 
                 if u not in C:
                     C[u] = {}
-                    C[u][v] = 0
                     N[u] = {}
-                    N[u][v] = 0
 
                 if v not in C[u]:
-                    C[u][v] = 0
+                    C[u][v] = 1
                     N[u][v] = 0
 
                 N[u][v] += 1
@@ -80,13 +78,21 @@ def cal_user_weights(ratings, alpha):
 
     print('Calculate final similarity matrix')
     W = {}
+    speedup = {}
+    index = 0
     for u, related_users in C.items():
+        index += 1
+        if index % 50 == 0:
+            print(index)
+
         if u not in W:
             W[u] = {}
         for v, cuv in related_users.items():
-            if v not in W[u]:
-                W[u][v] = 0
-            W[u][v] = cuv / chi2.ppf(alpha / 2, N[u][v])
+            if N[u][v] not in speedup:
+                speedup[N[u][v]] = chi2.ppf(alpha / 2, N[u][v])
+
+            W[u][v] = speedup[N[u][v]] / cuv
+            #print(W[u][v], cuv, speedup[N[u][v]])
 
     return W
 
@@ -98,14 +104,15 @@ def write_matrix(W, filename):
 
 
 if __name__ == '__main__':
-    train_data = '../data/MovieLens/ratings.dat'
+    train_data = '../data/MovieLens/train.dat'
     test_data = '../data/MovieLens/test.dat'
+    output_matrix = 'MovieLens.matrix'
 
     # load test data
-    test_logs = load_user_logs(test_data)
+    test_logs = load_test_logs(test_data, 0, 1)
 
     # load user logs
-    user_rating_info = load_raw_logs(test_logs, train_data, 0, 1, 2)
+    user_rating_info = load_train_logs(train_data, 0, 1, 2)
 
     # user to user weight calculation
     user_matrix = cal_user_weights(user_rating_info, 0.05)

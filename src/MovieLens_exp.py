@@ -3,6 +3,7 @@ import codecs
 import operator
 import matplotlib.pyplot as plt
 from math import sqrt
+import random
 
 
 def load_graph(filename):
@@ -14,12 +15,8 @@ def load_graph(filename):
 def load_raw_logs(input_file, user_index, item_index):
     with codecs.open(input_file, 'r') as fr:
         train = {}
-        index = 0
         for row in fr:
             cols = row.strip().split('\t')
-            index += 1
-            if index % 10000 == 0:
-                print(index)
             user = cols[user_index]
             item = cols[item_index]
             if  user not in train:
@@ -45,6 +42,7 @@ def propagation(graph, node_id):
 
 
 def recommend(graph, node_id, top_p):
+    # TODO need to modify for 80/20 expirement
     pois = graph.neighbors(node_id)
     voters = {}
     for poi in pois:
@@ -52,32 +50,38 @@ def recommend(graph, node_id, top_p):
 
         for n in neighbor_list:
             if n not in voters:
-                voters[n] = 0.0
+                voters[n] = 0
             voters[n] += 1
-
+    '''
     for v in voters:
         voters[v] = float(voters[v] / len(graph.neighbors(v)))
+    '''
 
+    #sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
 
-    sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
-
-    triggered_pois = {}
-    threshold = int(len(sorted_voters) * top_p)
-    for v in range(threshold):
-        if sorted_voters[v][0] == node_id :
+    triggered_pois = set()
+    #threshold = int(len(sorted_voters) * top_p)
+    for v in voters:
+        if v == node_id :
             continue
 
-        for poi in graph.neighbors(sorted_voters[v][0]):
-
+        for poi in graph.neighbors(v):
+            '''
             if poi in graph.neighbors(node_id):
                 continue
+
 
             if poi not in triggered_pois:
                 triggered_pois[poi] = 0
 
             triggered_pois[poi] += 1
+            '''
+            triggered_pois.add(poi)
+            if len(triggered_pois) == 3706:
+                print('break')
+                break
 
-    return triggered_pois
+    return len(voters), triggered_pois
 
 
 def exp1(graph, logs, output_file):
@@ -179,6 +183,7 @@ def exp3(input_file, graph, topk):
     print('Recall: ', float(hit / total))
     return float(hit / total)
 
+
 def exp4(input_file, graph, output_file):
     with codecs.open(input_file, 'r') as fr:
         fw = codecs.open(output_file, 'w')
@@ -206,6 +211,7 @@ def exp4(input_file, graph, output_file):
                     fw.write('\t' + str(float(sorted_users[i][1])))
             fw.write('\n')
 
+
 def exp5(graph, logs):
     with codecs.open('exp5_result.txt', 'w') as fw:
         for u in logs:
@@ -219,21 +225,70 @@ def exp5(graph, logs):
                     print('Error')
 
 
+def exp6(graph, exp_logs):
+    # randomly sample 10 users for the experiment
+    sample_users = [ list(exp_logs.keys())[i] for i in random.sample(range(len(exp_logs)), 10)]
+
+    fw = codecs.open('exp6_result.txt', 'w')
+    for user in sample_users:
+        print(user)
+        # get the relevant items
+        relevant_items = exp_logs[user]
+
+        for item in relevant_items:
+            graph.remove_edge(user,item)
+            assert not graph.has_edge(user, item), '[Error] Edge exists'
+
+            item_paths = recommend(graph, user, 1)
+
+            # write # of paths into output file
+            hit = 0
+            for i in item_paths:
+                if i == item:
+                    hit = 1
+                    fw.write(user + '\t' + i + '\t1\t' + str(item_paths[i]) + '\n')
+                else:
+                    fw.write(user + '\t' + i + '\t0\t' + str(item_paths[i]) + '\n')
+
+            if hit == 0:
+                fw.write(user + '\t' + i + '\t1\t0\n')
+
+            graph.add_edge(user, item)
+            assert graph.has_edge(user, item), '[Error] Edge does not exist'
+
+    fw.close()
+
+
+def exp7(graph, exp_logs):
+    fw = codecs.open('exp7_result.txt', 'w')
+    index = 0
+    for user in exp_logs:
+        index += 1
+        #print(user)
+        if (index % 100) == 0:
+            print(index)
+        num_users, pois = recommend(graph, user, 1)
+        p_user = float(num_users / 6040)
+        p_item = float(len(pois) / 3706)
+        fw.write(str(p_user) + '\t' + str(p_item) + '\n')
+
+    fw.close()
+
 if __name__ == '__main__':
-    test_file = '../data/MovieLens/train.dat'
-    graph_file = 'MovieLens_1M.graph'
+    exp_file = '../data/MovieLens/train.dat'
+    graph_file = 'MovieLens.graph'
     output_file = 'user_coverage.dat'
 
     recommend_graph = load_graph(graph_file)
 
-    test_logs = load_raw_logs(test_file, 0, 1)
+    test_logs = load_raw_logs(exp_file, 0, 1)
 
     #exp1(recommend_graph,test_logs)
     #exp2(recommend_graph, test_logs, output_file)
     #exp3(test_file, recommend_graph, 5)
     #exp4(test_file, recommend_graph, 'exp4_result.dat')
-    exp5(recommend_graph, test_logs)
-
-
+    #exp5(recommend_graph, test_logs)
+    #exp6(recommend_graph, test_logs)
+    exp7(recommend_graph, test_logs)
 
     print('Mission Complete')

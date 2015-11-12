@@ -64,13 +64,13 @@ def write_graph(graph, filename):
 
 if __name__ == '__main__':
     train_file = '../data/MovieLens/train.dat'
-    graph_file = 'MovieLens_1M.graph'
+    graph_file = 'MovieLens.graph'
 
     user_logs = load_raw_logs(train_file, 0, 1)
     start_time = time.time()
-    SG_graph = create_user_graph(user_logs)
+    recommendation_graph = create_user_graph(user_logs)
     end_time = time.time()
-    write_graph(SG_graph, graph_file)
+    write_graph(recommendation_graph, graph_file)
     print("--- %s seconds ---" % (end_time - start_time))
 
 

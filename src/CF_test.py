@@ -5,60 +5,92 @@ import time
 
 
 def load_matrix(filename):
+    print('Load matrix')
     with open(filename, 'rb') as fp:
         W = pickle.load(fp)
     return W
 
 
-def load_raw_logs(input_file, user_index, POI_index):
+def load_test_logs(input_file, user_index, item_index):
+    print('Load test logs')
     with codecs.open(input_file, 'r') as fr:
-        train = {}
-        index = 0
+        logs = {}
         for row in fr:
             cols = row.strip().split('\t')
-            index += 1
-            if index % 10000 == 0:
-                print(index)
-            user = cols[user_index]
-            item = cols[POI_index]
-            if  user not in train:
-                train[user] = {}
-                train[user][item] = 1
 
-            if item not in train[user]:
-                train[user][item] = 1
-
-    return train
-
-def load_logs(input_file, user_index, item_index):
-    with codecs.open(input_file, 'r') as fr:
-        train = {}
-        index = 0
-        for row in fr:
-            cols = row.strip().split('\t')
-            index += 1
-            if index % 10000 == 0:
-                print(index)
             user = cols[user_index]
             item = cols[item_index]
-            if  user not in train:
-                train[user] = set()
 
-            train[user].add(item)
+            if user not in logs:
+                logs[user] = []
+
+            logs[user].append(item)
+
+    return logs
+
+
+def load_train_logs(input_file, user_index, item_index, rating_index):
+    print('Load train logs')
+    with codecs.open(input_file, 'r') as fr:
+        train = {}
+        for row in fr:
+            cols = row.strip().split('\t')
+
+            user = cols[user_index]
+            item = cols[item_index]
+            rating = float(cols[rating_index])
+            if  user not in train:
+                train[user] = {}
+
+            if item not in train[user]:
+                train[user][item] = rating
 
     return train
 
-def recommend(user, train, W):
+
+def load_raw_logs(test, input_file, user_index, item_index, rating_index):
+    print('Load user logs')
+    with codecs.open(input_file, 'r') as fr:
+        train = {}
+        for row in fr:
+            cols = row.strip().split('::')
+
+            user = cols[user_index]
+            item = cols[item_index]
+            rating = float(cols[rating_index])
+            if  user not in train:
+                train[user] = {}
+
+            if item not in train[user]:
+                if user not in test or (user in test and item not in test[user]):
+                    train[user][item] = rating
+
+    return train
+
+
+def recommend(user, train, W, topk):
     rank = {}
+    normalize = {}
     interacted_items = train[user]
-    for v, wuv in sorted(W[user].items(), key=operator.itemgetter(1), reverse=True):
+    for v, wuv in sorted(W[user].items(), key=operator.itemgetter(1), reverse=True)[:topk]:
+        #print(v, wuv)
         for i, rvi in train[v].items():
             if i in interacted_items:
                 continue
 
             if i not in rank:
                 rank[i] = 0
+                normalize[i] = 0
+            '''
+            if i == target:
+                print(i, wuv, rvi)
+            '''
             rank[i] += wuv * rvi
+            normalize[i] += wuv
+    '''
+    for i in rank:
+        rank[i] = rank[i] / normalize[i]
+    '''
     return rank
 
 
@@ -67,40 +99,70 @@ if __name__ == '__main__':
     test_file = '../data/MovieLens/test.dat'
     matrix_file = 'MovieLens.matrix'
 
-    train_logs = load_raw_logs(train_file, 0, 1)
-    test_logs = load_logs(test_file, 0, 1)
+    test_logs = load_train_logs(test_file, 0, 1, 2)
+    train_logs = load_train_logs(train_file, 0, 1, 2)
     similarity = load_matrix(matrix_file)
-    start_time =time.time()
-    n_precision = 0
-    n_recall = 0
-    n_hit = 0
-    topk = 5
-    index = 0
-    for user in train_logs:
-        index += 1
-        #print(user)
-        if((index % 100) == 0):
-            print(index)
-            print(user, hit, len(test_logs[user]))
-            print('Precision:', float(n_hit) / float(n_precision))
-            print('Recall:', float(n_hit / n_recall))
 
-        scores = recommend(user, train_logs, similarity)
-        sorted_scores = sorted(scores.items(), key=operator.itemgetter(1), reverse=True)
+    #topk = 20
 
-        hit = 0
-        for i in range(topk):
+    precision = []
+
+    for topk in range(5, 51, 5):
+        start_time =time.time()
+        n_precision = 0
+        n_recall = 0
+        n_hit = 0
+        index = 0
+        fw = codecs.open('top' + str(topk) + '.txt', 'w')
+        for user in test_logs:
+            index += 1
+            #print(user, target_item)
+            '''
+            if((index % 100) == 0):
+                print(index)
+                #print(user, hit, len(test_logs[user]))
+                print('Precision:', float(n_hit / n_precision))
+                #print('Recall:', float(n_hit / n_recall))
+            '''
+            predict_ratings = recommend(user, train_logs, similarity, topk)
+
+            '''
             try:
-                if sorted_scores[i][0] in test_logs[user]:
-                    hit += 1
+                print(predict_ratings[target_item])
             except KeyError:
-                print(user, ' not found')
+                print('KeyError')
+            scores = {}
+            for item in test_logs[user]:
+                if item in predict_ratings:
+                    scores[item] = predict_ratings[item]
+                else:
+                    scores[item] = 0
+            '''
 
-        n_precision += topk
-        n_recall += len(test_logs[user])
-        n_hit += hit
+            sorted_scores = sorted(predict_ratings.items(), key=operator.itemgetter(1), reverse=True)
 
-    end_time = time.time()
+            fw.write(user)
+            for i in range(100):
+                fw.write('\t' + sorted_scores[i][0])
+                '''
+                if sorted_scores[i][0] in test_logs[user]:
+                    n_hit += 1
+                '''
+
+            n_precision += topk
+            n_recall += 1
+
+        fw.close()
+        precision.append(float(n_hit / n_precision))
+        #print('Recall:', float(n_hit / n_recall))
+        print('Precision:', float(n_hit / n_precision))
+
+        end_time = time.time()
+
+    with codecs.open('CF_test_exp.csv', 'w') as fw:
+        for i in range(len(precision)):
+            fw.write(str(i * 5 + 5) + ',' + str(precision[i]) + '\n')
+
     print("--- %s seconds ---" % (end_time - start_time))
 
 

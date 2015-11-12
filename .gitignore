@@ -12,3 +12,4 @@ poidata/
 data/*
 tmp*
 *.matrix
+*.csv
