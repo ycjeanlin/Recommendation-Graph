@@ -230,16 +230,13 @@ def exp_popularity(item_logs, result_file, out_file):
         for row in fr:
             # TODO pay attention to row format
             cols = row.strip().split(',')
-            for i in range(2, 3):
+            for i in range(1, 2):
                 if i == len(cols):
                     break
                 #item, score = cols[i].split(':')
-                item = cols[i].replace('\'', '')
+                item = cols[i].strip().replace('\'', '')
                 if item not in popularity:
-                    try:
-                        popularity[item] = len(item_logs[item])
-                    except:
-                        popularity[item] = 1
+                    popularity[item] = len(item_logs[item])
 
     fw = codecs.open(out_file, 'w')
     for item, p in popularity.items():
@@ -336,7 +333,7 @@ if __name__ == '__main__':
     output_file = 'user_coverage.dat'
 
     #recommend_graph = load_graph(graph_file)
-    test_logs = load_raw_logs(train_file, 0, 1)
+    test_logs = load_raw_logs(test_file, 0, 1)
     item_logs = load_raw_logs(train_file, 1, 0)
 
     #test_logs = load_raw_logs(test_file, 1, 0)
