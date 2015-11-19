@@ -335,7 +335,7 @@ if __name__ == '__main__':
     graph_file = 'MovieLens.graph'
     output_file = 'user_coverage.dat'
 
-    recommend_graph = load_graph(graph_file)
+    #recommend_graph = load_graph(graph_file)
     test_logs = load_raw_logs(train_file, 0, 1)
     item_logs = load_raw_logs(train_file, 1, 0)
 
@@ -345,7 +345,7 @@ if __name__ == '__main__':
     #exp3(test_file, recommend_graph, 5)
     #exp4(test_file, recommend_graph, 'exp4_result.dat')
     #exp5(recommend_graph, test_logs)
-    exp6(recommend_graph, test_logs)
+    #exp6(recommend_graph, test_logs)
     #exp7(recommend_graph, test_logs)
     '''
     fw = codecs.open('exp_precision.txt', 'w')
