@@ -193,18 +193,29 @@ def gen_exp_data_recall(in_file, train, test):
     train_logs_gen(test_users, user_activity_all, train)
 
 
+def gen_test_top_5(test_file, out_file):
+    test_log = load_user_logs(test_file, 0, 1, 2)
+    fw = codecs.open(out_file, 'w')
+    for user, logs in test_log.items():
+        sorted_logs = sorted(logs.items(), key=operator.itemgetter(1), reverse=True)
+        fw.write(user)
+        for i in range(len(sorted_logs)):
+            fw.write('\t' + sorted_logs[i][0] + ':' + str(sorted_logs[i][1]))
+        fw.write('\n')
+    fw.close()
+
 if __name__ == '__main__':
     input_file = '../data/MovieLens/ratings.dat'
     train_file = '../data/MovieLens/train.dat'
     test_file = '../data/MovieLens/test.dat'
 
-    item_activity_all, candidate_users = load_raw_logs(input_file, 0, 1, 2)
-    print(len(item_activity_all))
+    #item_activity_all, candidate_users = load_raw_logs(input_file, 0, 1, 2)
+    #print(len(item_activity_all))
 
     #gen_exp_data_precision(input_file, train_file, test_file)
     #gen_exp_data_recall(input_file, train_file, test_file)
     #user_entropy(train_file)
-
+    gen_test_top_5(train_file, 'train_sorted.dat')
 
     print('Mission Complete')
 

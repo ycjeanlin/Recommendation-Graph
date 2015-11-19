@@ -100,7 +100,7 @@ def exp1(graph, logs, output_file):
             num_user = len(sorted_users)
             for poi in test_logs[user]:
                 for i in range(help_user, num_user):
-                    if recommend_graph.has_edge(sorted_users[i][0], poi):
+                    if graph.has_edge(sorted_users[i][0], poi):
                         num_hit -= 1
                         help_user += 1
                         break
@@ -122,32 +122,7 @@ def exp1(graph, logs, output_file):
     plt.show()
 
 
-def exp2(graph, logs, out_file):
-    with codecs.open(out_file, 'w') as fw:
-        index = 0
-        for user in logs:
-            index += 1
-            if (index % 100) == 0:
-                print(index)
-
-            pois = logs[user]
-            related_users = propagation(graph, user)
-
-            sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
-            distribution = []
-            for i in range(1, len(sorted_users)): #exclude user himself
-                num_hit = 0
-                for poi in pois:
-                    if graph.has_edge(sorted_users[i][0], poi):
-                        num_hit += 1
-
-                distribution.append(float(num_hit / len(logs[user])))
-
-            out_str = '\t'.join(format(x, "10.3f") for x in distribution)
-            fw.write(user + '\t' + out_str + '\n')
-
-
-def exp3(input_file, graph, topk):
+def exp_niche_item_recall(input_file, graph, topk):
     hit = 0
     total = 0
     with codecs.open(input_file, 'r') as fr:
@@ -184,48 +159,10 @@ def exp3(input_file, graph, topk):
     return float(hit / total)
 
 
-def exp4(input_file, graph, output_file):
-    with codecs.open(input_file, 'r') as fr:
-        fw = codecs.open(output_file, 'w')
-        index = 0
-        for row in fr:
-
-            index += 1
-            if (index % 100) == 0:
-                print(index)
-
-            # load test file
-            cols = row.strip().split('\t')
-            user = cols[0]
-            target_item = cols[2]
-
-            related_users = propagation(graph, user)
-            sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
-            top_20_user = int(len(sorted_users) * 0.2)
-
-            #user_items = len(graph.neighbors(user))
-            fw.write(user)
-            for i in range(top_20_user):
-                #check whether has relation with target item
-                if graph.has_edge(sorted_users[i][0], target_item):
-                    fw.write('\t' + str(float(sorted_users[i][1])))
-            fw.write('\n')
-
-
-def exp5(graph, logs):
-    with codecs.open('exp5_result.txt', 'w') as fw:
-        for u in logs:
-            print(u)
-            activeness = len(logs[u])
-            for item in logs[u]:
-                try:
-                    popularity = graph.degree(item)
-                    fw.write(str(activeness) + '\t' + str(popularity) + '\n')
-                except:
-                    print('Error')
-
-
 def exp6(graph, exp_logs):
+    '''
+    Count the number of paths between a user and his related items
+    '''
     # randomly sample 10 users for the experiment
     sample_users = [ list(exp_logs.keys())[i] for i in random.sample(range(len(exp_logs)), 10)]
 
@@ -260,6 +197,10 @@ def exp6(graph, exp_logs):
 
 
 def exp7(graph, exp_logs):
+    '''
+    Calculate the triggered users proportion and the triggered poi proportion
+    Output user proportion and item proportion to a file
+    '''
     fw = codecs.open('exp7_result.txt', 'w')
     index = 0
     for user in exp_logs:
@@ -274,21 +215,138 @@ def exp7(graph, exp_logs):
 
     fw.close()
 
+
+def exp_popularity(item_logs, result_file, out_file):
+    popularity = {}
+    with codecs.open(result_file, 'r') as fr:
+        for row in fr:
+            cols = row.strip().split('\t')
+            for i in range(1, 6):
+                if i == len(cols):
+                    break
+                item, score = cols[i].split(':')
+                if item not in popularity:
+                    try:
+                        popularity[item] = len(item_logs[item])
+                    except:
+                        popularity[item] = 1
+
+    fw = codecs.open(out_file, 'w')
+    for item, p in popularity.items():
+        fw.write(item + '\t' + str(p) + '\n')
+
+    fw.close()
+
+
+def exp_precision(test_logs, item_logs, result_file, out_file):
+    n_precision = 0
+    n_hit = 0
+    popularity = {}
+    with codecs.open(result_file, 'r') as fr:
+        for row in fr:
+            cols = row.strip().split('\t')
+            user = cols[0]
+            for i in range(1, 6):
+                if i == len(cols):
+                    break
+                item, score = cols[i].split(':')
+                if item in test_logs[user]:
+                    n_hit += 1
+                    if item not in popularity:
+                        popularity[item] = len(item_logs[item])
+
+            n_precision += 5
+
+    fw = codecs.open(out_file, 'w')
+    for item, p in popularity.items():
+        fw.write(item + '\t' + str(p) + '\n')
+
+    fw.close()
+
+    return float(n_hit / n_precision)
+
+
+def exp_diversity(out_file):
+    diversity = {}
+    for i in range(5, 51, 5):
+        items = set()
+        with codecs.open('exp_popularity_hit_'+str(i)+'.txt', 'r') as fr:
+            for row in fr:
+                cols = row.strip().split('\t')
+                items.add(cols[0])
+        diversity[i] = len(items)
+
+    fw = codecs.open(out_file, 'w')
+    for i in range(5, 51, 5):
+        fw.write(str(i) + '\t' + str(diversity[i]) + '\n')
+
+    fw.close()
+
+
+def exp_item_recommended_times(item_logs, test_logs, result_file, out_file):
+    times = {}
+    for i in range(5, 51, 5):
+        with codecs.open(result_file + '_top_' + str(i)+'.txt', 'r') as fr:
+            for row in fr:
+                cols = row.strip().split('\t')
+                user = cols[0]
+                for j in range(1, 6):
+                    if j == len(cols):
+                        break
+                    item, score = cols[j].split(':')
+                    if item not in test_logs[user]:
+                        continue
+
+                    if item not in times:
+                        times[item] = {}
+
+                    if i not in times[item]:
+                        times[item][i] = 0
+
+                    times[item][i]  += 1
+
+    fw = codecs.open(out_file, 'w')
+    for item, counts in times.items():
+        fw.write(item)
+        for topk in range(5, 51, 5):
+            try:
+                fw.write(',' + str(times[item][topk]))
+            except:
+                fw.write(',0')
+        fw.write(',' + str(len(item_logs[item])) + '\n')
+
+
+    fw.close()
+
+
 if __name__ == '__main__':
-    exp_file = '../data/MovieLens/train.dat'
+    train_file = '../data/MovieLens/train.dat'
+    test_file = '../data/MovieLens/test.dat'
     graph_file = 'MovieLens.graph'
     output_file = 'user_coverage.dat'
 
-    recommend_graph = load_graph(graph_file)
+    #recommend_graph = load_graph(graph_file)
+    test_logs = load_raw_logs(test_file, 0, 1)
+    item_logs = load_raw_logs(train_file, 1, 0)
 
-    test_logs = load_raw_logs(exp_file, 0, 1)
-
+    #test_logs = load_raw_logs(test_file, 1, 0)
     #exp1(recommend_graph,test_logs)
     #exp2(recommend_graph, test_logs, output_file)
     #exp3(test_file, recommend_graph, 5)
     #exp4(test_file, recommend_graph, 'exp4_result.dat')
     #exp5(recommend_graph, test_logs)
     #exp6(recommend_graph, test_logs)
-    exp7(recommend_graph, test_logs)
+    #exp7(recommend_graph, test_logs)
+    '''
+    fw = codecs.open('exp_precision.txt', 'w')
+    for i in range(5, 51, 5):
+        fw.write(str(i) + '\t' + str(exp_precision(test_logs, item_logs, 'CF_weight_rating_top_'+ str(i) + '.txt', 'exp_popularity_hit_'+ str(i) + '.txt')) + '\n')
+        exp_popularity(item_logs, 'CF_no_weight_top_'+ str(i) + '.txt', 'exp_popularity_'+ str(i) + '.txt')
+    fw.close()
+    '''
+    #exp_precision(test_logs, item_logs, 'train_sorted.dat', 'exp_precision_5.txt')
+    #exp_popularity(item_logs, 'CF_weight_rating_top_5.txt', 'item_popularity.txt')
+    exp_item_recommended_times(item_logs, test_logs, 'CF_weight_rating', 'exp_times_weight_rating_hit.csv')
+    #exp_diversity('exp_diversity_hit.txt')
 
     print('Mission Complete')

@@ -85,7 +85,7 @@ def recommend(user, train, W, topk):
             if i == target:
                 print(i, wuv, rvi)
             '''
-            rank[i] += wuv * rvi
+            rank[i] += 1
             normalize[i] += wuv
     '''
     for i in rank:
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         n_recall = 0
         n_hit = 0
         index = 0
-        fw = codecs.open('top' + str(topk) + '.txt', 'w')
+        fw = codecs.open('CF_no_weight_top_' + str(topk) + '.txt', 'w')
         for user in test_logs:
             index += 1
             #print(user, target_item)
@@ -142,13 +142,16 @@ if __name__ == '__main__':
             sorted_scores = sorted(predict_ratings.items(), key=operator.itemgetter(1), reverse=True)
 
             fw.write(user)
-            for i in range(100):
-                fw.write('\t' + sorted_scores[i][0])
+            for i in range(50):
+                if i == len(sorted_scores):
+                    break
+                fw.write('\t' + sorted_scores[i][0] + ':' + str(sorted_scores[i][1]))
+
                 '''
                 if sorted_scores[i][0] in test_logs[user]:
                     n_hit += 1
                 '''
-
+            fw.write('\n')
             n_precision += topk
             n_recall += 1
 
@@ -158,11 +161,11 @@ if __name__ == '__main__':
         print('Precision:', float(n_hit / n_precision))
 
         end_time = time.time()
-
+    '''
     with codecs.open('CF_test_exp.csv', 'w') as fw:
         for i in range(len(precision)):
             fw.write(str(i * 5 + 5) + ',' + str(precision[i]) + '\n')
-
+    '''
     print("--- %s seconds ---" % (end_time - start_time))
 
 
