@@ -234,7 +234,7 @@ def exp_popularity(item_logs, result_file, out_file):
                 if i == len(cols):
                     break
                 #item, score = cols[i].split(':')
-                item = cols[i]
+                item = cols[i].replace('\'', '')
                 if item not in popularity:
                     try:
                         popularity[item] = len(item_logs[item])
