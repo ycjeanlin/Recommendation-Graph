@@ -326,14 +326,26 @@ def exp_item_recommended_times(item_logs, test_logs, result_file, out_file):
     fw.close()
 
 
+def exp_users_intersection_items(graph, exp6_result):
+    with codecs.open(exp6_result, 'r') as fr:
+        fw = codecs.open('exp_users_similarity.txt', 'w')
+        for row in fr:
+            cols = row.strip().split(', ')
+            user1 = cols[0].replace('[\'', '').replace('\'', '')
+            user2 = cols[2].replace('\'', '')
+            fw.write(user1 + '\t' + user2 + '\t' + str(len([p for p in nx.all_shortest_paths(graph, source=user1,target=user2)])) + '\n')
+
+        fw.close()
+
+
 if __name__ == '__main__':
     train_file = '../data/MovieLens/train.dat'
     test_file = '../data/MovieLens/test.dat'
     graph_file = 'MovieLens.graph'
     output_file = 'user_coverage.dat'
 
-    #recommend_graph = load_graph(graph_file)
-    train_logs = load_raw_logs(train_file, 0, 1)
+    recommend_graph = load_graph(graph_file)
+    #train_logs = load_raw_logs(train_file, 0, 1)
     #test_logs = load_raw_logs(test_file, 0, 1)
     #item_logs = load_raw_logs(train_file, 1, 0)
 
@@ -353,8 +365,9 @@ if __name__ == '__main__':
     fw.close()
     '''
     #exp_precision(test_logs, item_logs, 'train_sorted.dat', 'exp_precision_5.txt')
-    exp_popularity(train_logs, 'exp6_result.txt', 'user_degree.txt')
+    #exp_popularity(train_logs, 'exp6_result.txt', 'user_degree.txt')
     #exp_item_recommended_times(item_logs, test_logs, 'CF_weight_rating', 'exp_times_weight_rating_hit.csv')
     #exp_diversity('exp_diversity_hit.txt')
+    exp_users_intersection_items(recommend_graph, 'exp6_result.txt')
 
     print('Mission Complete')
