@@ -228,11 +228,13 @@ def exp_popularity(item_logs, result_file, out_file):
     popularity = {}
     with codecs.open(result_file, 'r') as fr:
         for row in fr:
-            cols = row.strip().split('\t')
-            for i in range(1, 6):
+            # TODO pay attention to row format
+            cols = row.strip().split(',')
+            for i in range(2, 3):
                 if i == len(cols):
                     break
-                item, score = cols[i].split(':')
+                #item, score = cols[i].split(':')
+                item = cols[i]
                 if item not in popularity:
                     try:
                         popularity[item] = len(item_logs[item])
@@ -335,7 +337,7 @@ if __name__ == '__main__':
 
     recommend_graph = load_graph(graph_file)
     test_logs = load_raw_logs(train_file, 0, 1)
-    #item_logs = load_raw_logs(train_file, 1, 0)
+    item_logs = load_raw_logs(train_file, 1, 0)
 
     #test_logs = load_raw_logs(test_file, 1, 0)
     #exp1(recommend_graph,test_logs)
@@ -353,7 +355,7 @@ if __name__ == '__main__':
     fw.close()
     '''
     #exp_precision(test_logs, item_logs, 'train_sorted.dat', 'exp_precision_5.txt')
-    #exp_popularity(item_logs, 'CF_weight_rating_top_5.txt', 'item_popularity.txt')
+    exp_popularity(item_logs, 'exp6_result.txt', 'item_degree.txt')
     #exp_item_recommended_times(item_logs, test_logs, 'CF_weight_rating', 'exp_times_weight_rating_hit.csv')
     #exp_diversity('exp_diversity_hit.txt')
 
