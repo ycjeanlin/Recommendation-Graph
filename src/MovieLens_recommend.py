@@ -37,16 +37,17 @@ def giveup(degree_poi, degree_user):
     return num1 < num2
 
 
-def propagation(graph, node_id, top_p):
+def propagation(graph, node_id, top_p, niches):
     items = graph.neighbors(node_id)
     voters = {}
     for item in items:
         neighbor_list = graph.neighbors(item)
 
         for n in neighbor_list:
-            if n not in voters:
-                voters[n] = 0
-            voters[n] += 1
+            if n in niches:
+                if n not in voters:
+                    voters[n] = 0
+                voters[n] += 1
 
     sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -116,7 +117,7 @@ if __name__ == '__main__':
         for row in fr:
             niche_items.add(row.strip())
 
-    for p in range(5, 101, 5):
+    for p in range(5, 50, 5):
         top_p = 0.1 + p * 0.05
         fw = codecs.open('top_' + str(p) + '.txt', 'w')
         print('====== ', str(p), ' ======')
@@ -124,7 +125,7 @@ if __name__ == '__main__':
         n_recall = 0
         n_hit = 0
         index = 0
-        for user in test_logs:
+        for user in niche_items:
             index += 1
             #print(user)
             if((index % 1000) == 0):
@@ -132,10 +133,10 @@ if __name__ == '__main__':
                 #print(user, hit, len(test_logs[user]))
                 #print('Precision:', float(n_hit) / float(n_precision))
                 #print('Recall:', float(n_hit / n_recall))
-            if user not in niche_items or not recommend_graph.has_node(user):
+            if not recommend_graph.has_node(user):
                 continue
 
-            item_score = propagation(recommend_graph, user, p)
+            item_score = propagation(recommend_graph, user, p, niche_items)
 
             sorted_items = sorted(item_score.items(), key=operator.itemgetter(1), reverse=True)
 

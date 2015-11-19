@@ -4,6 +4,7 @@ import operator
 import matplotlib.pyplot as plt
 from math import sqrt
 import random
+import networkx as nx
 
 
 def load_graph(filename):
@@ -176,9 +177,16 @@ def exp6(graph, exp_logs):
             graph.remove_edge(user,item)
             assert not graph.has_edge(user, item), '[Error] Edge exists'
 
-            item_paths = recommend(graph, user, 1)
+            #item_paths = recommend(graph, user, 1)
+            try:
+                for p in nx.all_shortest_paths(graph,source=user,target=item):
+                    fw.write(str(p) + '\n')
+                    #print(p)
+            except:
 
+                print(user, item, 'no path')
             # write # of paths into output file
+            '''
             hit = 0
             for i in item_paths:
                 if i == item:
@@ -189,7 +197,7 @@ def exp6(graph, exp_logs):
 
             if hit == 0:
                 fw.write(user + '\t' + i + '\t1\t0\n')
-
+            '''
             graph.add_edge(user, item)
             assert graph.has_edge(user, item), '[Error] Edge does not exist'
 
@@ -325,9 +333,9 @@ if __name__ == '__main__':
     graph_file = 'MovieLens.graph'
     output_file = 'user_coverage.dat'
 
-    #recommend_graph = load_graph(graph_file)
-    test_logs = load_raw_logs(test_file, 0, 1)
-    item_logs = load_raw_logs(train_file, 1, 0)
+    recommend_graph = load_graph(graph_file)
+    test_logs = load_raw_logs(train_file, 0, 1)
+    #item_logs = load_raw_logs(train_file, 1, 0)
 
     #test_logs = load_raw_logs(test_file, 1, 0)
     #exp1(recommend_graph,test_logs)
@@ -335,18 +343,18 @@ if __name__ == '__main__':
     #exp3(test_file, recommend_graph, 5)
     #exp4(test_file, recommend_graph, 'exp4_result.dat')
     #exp5(recommend_graph, test_logs)
-    #exp6(recommend_graph, test_logs)
+    exp6(recommend_graph, test_logs)
     #exp7(recommend_graph, test_logs)
     '''
     fw = codecs.open('exp_precision.txt', 'w')
-    for i in range(5, 51, 5):
-        fw.write(str(i) + '\t' + str(exp_precision(test_logs, item_logs, 'CF_weight_rating_top_'+ str(i) + '.txt', 'exp_popularity_hit_'+ str(i) + '.txt')) + '\n')
-        exp_popularity(item_logs, 'CF_no_weight_top_'+ str(i) + '.txt', 'exp_popularity_'+ str(i) + '.txt')
+    for i in range(5, 101, 5):
+        fw.write(str(i) + '\t' + str(exp_precision(item_logs, test_logs, 'top_'+ str(i) + '.txt', 'exp_popularity_hit_'+ str(i) + '.txt')) + '\n')
+        exp_popularity(test_logs, 'top_'+ str(i) + '.txt', 'exp_popularity_'+ str(i) + '.txt')
     fw.close()
     '''
     #exp_precision(test_logs, item_logs, 'train_sorted.dat', 'exp_precision_5.txt')
     #exp_popularity(item_logs, 'CF_weight_rating_top_5.txt', 'item_popularity.txt')
-    exp_item_recommended_times(item_logs, test_logs, 'CF_weight_rating', 'exp_times_weight_rating_hit.csv')
+    #exp_item_recommended_times(item_logs, test_logs, 'CF_weight_rating', 'exp_times_weight_rating_hit.csv')
     #exp_diversity('exp_diversity_hit.txt')
 
     print('Mission Complete')
