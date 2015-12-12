@@ -62,7 +62,8 @@ def plot_hist(in_file):
     with codecs.open(in_file, 'r') as fr:
         for row in fr:
             cols = row.strip().split('\t')
-            data1.append(float(cols[1]))
+            if float(cols[1]) < 4000:
+                data1.append(float(cols[1]))
             #data1.append(float(cols[3]) / float(cols[4]))
     '''
     with codecs.open(in_file + '_10.txt', 'r') as fr:
