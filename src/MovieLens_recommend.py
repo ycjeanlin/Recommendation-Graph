@@ -3,7 +3,7 @@ import codecs
 import operator
 import numpy as np
 import networkx as nx
-import math
+from math import sqrt
 import random
 import matplotlib.pyplot as plt
 
@@ -37,18 +37,23 @@ def giveup(degree_poi, degree_user):
     return num1 < num2
 
 
-def propagation(graph, node_id, top_p, niches):
+def propagation(graph, node_id, top_p):
     items = graph.neighbors(node_id)
     voters = {}
     for item in items:
         neighbor_list = graph.neighbors(item)
 
         for n in neighbor_list:
-            if n in niches:
-                if n not in voters:
-                    voters[n] = 0
-                voters[n] += 1
-
+            if n not in voters:
+                voters[n] = 0
+            voters[n] += 1
+    speedup = {}
+    degree1 = graph.degree(node_id)
+    for v in voters:
+        degree2 = graph.degree(v)
+        if degree2 not in speedup:
+            speedup[degree2] = sqrt(degree1 * degree2)
+        voters[v] = float(voters[v] / speedup[degree2])
     sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
 
     triggered_items = {}
@@ -117,7 +122,7 @@ if __name__ == '__main__':
         for row in fr:
             niche_items.add(row.strip())
 
-    for p in range(5, 50, 5):
+    for p in range(5, 51, 5):
         top_p = 0.1 + p * 0.05
         fw = codecs.open('top_' + str(p) + '.txt', 'w')
         print('====== ', str(p), ' ======')
@@ -136,7 +141,7 @@ if __name__ == '__main__':
             if not recommend_graph.has_node(user):
                 continue
 
-            item_score = propagation(recommend_graph, user, p, niche_items)
+            item_score = propagation(recommend_graph, user, p)
 
             sorted_items = sorted(item_score.items(), key=operator.itemgetter(1), reverse=True)
 

@@ -29,15 +29,21 @@ def load_raw_logs(input_file, user_index, item_index):
 
 
 def propagation(graph, node_id):
-    pois = graph.neighbors(node_id)
+    items = graph.neighbors(node_id)
     voters = {}
-    for poi in pois:
-        neighbor_list = graph.neighbors(poi)
-        punish = float(len(neighbor_list))
+    for item in items:
+        neighbor_list = graph.neighbors(item)
         for n in neighbor_list:
             if n not in voters:
                 voters[n] = 0
-            voters[n] += 1 / punish
+            voters[n] += 1
+    speedup = {}
+    degree1 = graph.degree(node_id)
+    for v in voters:
+        degree2 = graph.degree(v)
+        if degree2 not in speedup:
+            speedup[degree2] = sqrt(degree1 * degree2)
+        voters[v] = float(voters[v] / speedup[degree2])
 
     return voters
 
@@ -59,7 +65,7 @@ def recommend(graph, node_id, top_p):
     '''
 
     #sorted_voters = sorted(voters.items(), key=operator.itemgetter(1), reverse=True)
-
+    '''
     triggered_pois = set()
     #threshold = int(len(sorted_voters) * top_p)
     for v in voters:
@@ -67,7 +73,7 @@ def recommend(graph, node_id, top_p):
             continue
 
         for poi in graph.neighbors(v):
-            '''
+
             if poi in graph.neighbors(node_id):
                 continue
 
@@ -76,13 +82,15 @@ def recommend(graph, node_id, top_p):
                 triggered_pois[poi] = 0
 
             triggered_pois[poi] += 1
-            '''
+
             triggered_pois.add(poi)
             if len(triggered_pois) == 3706:
                 print('break')
                 break
-
     return len(voters), triggered_pois
+    '''
+    return len(pois), len(voters)
+
 
 
 def exp1(graph, logs, output_file):
@@ -96,10 +104,10 @@ def exp1(graph, logs, output_file):
 
             sorted_users = sorted(related_users.items(), key=operator.itemgetter(1), reverse=True)
 
-            num_hit = int(len(test_logs[user]) * poi_coverage)
+            num_hit = int(len(logs[user]) * poi_coverage)
             help_user = 0
             num_user = len(sorted_users)
-            for poi in test_logs[user]:
+            for poi in logs[user]:
                 for i in range(help_user, num_user):
                     if graph.has_edge(sorted_users[i][0], poi):
                         num_hit -= 1
@@ -109,7 +117,7 @@ def exp1(graph, logs, output_file):
                 if num_hit == 0 or help_user == num_user:
                     user_percentage[user] = float(sorted_users[help_user-1][1])/float(sorted_users[0][1])
                     #user_percentage[user] = help_user/float(num_user)
-                    user_miss[user] = float(len(test_logs[user]) - (len(test_logs[user]) * poi_coverage - num_hit)) / len(test_logs[user])
+                    user_miss[user] = float(len(logs[user]) - (len(logs[user]) * poi_coverage - num_hit)) / len(logs[user])
                     break
 
         for user in user_percentage:
@@ -216,9 +224,9 @@ def exp7(graph, exp_logs):
         #print(user)
         if (index % 100) == 0:
             print(index)
-        num_users, pois = recommend(graph, user, 1)
+        num_users, num_pois = recommend(graph, user, 1)
         p_user = float(num_users / 6040)
-        p_item = float(len(pois) / 3706)
+        p_item = float(num_pois / 3706)
         fw.write(str(p_user) + '\t' + str(p_item) + '\n')
 
     fw.close()
@@ -229,12 +237,12 @@ def exp_popularity(item_logs, result_file, out_file):
     with codecs.open(result_file, 'r') as fr:
         for row in fr:
             # TODO pay attention to row format
-            cols = row.strip().split(',')
-            for i in range(2, 3):
+            cols = row.strip().split('\t')
+            for i in range(1, 6):
                 if i == len(cols):
                     break
-                #item, score = cols[i].split(':')
-                item = cols[i].strip().replace('\'', '')
+                item, score = cols[i].split(':')
+                #item = cols[i].strip().replace('\'', '')
                 if item not in popularity:
                     popularity[item] = len(item_logs[item])
 
@@ -327,27 +335,58 @@ def exp_item_recommended_times(item_logs, test_logs, result_file, out_file):
 
 
 def exp_users_intersection_items(graph, exp6_result):
+    test_items = {}
+    print('Load users')
+    index = 0
     with codecs.open(exp6_result, 'r') as fr:
-        fw = codecs.open('exp_users_similarity.txt', 'w')
         for row in fr:
+            index += 1
+            if (index % 10000) == 0:
+                print(index)
             cols = row.strip().split(', ')
-            user1 = cols[0].replace('[\'', '').replace('\'', '')
-            user2 = cols[2].replace('\'', '')
-            fw.write(user1 + '\t' + user2 + '\t' + str(len([p for p in nx.all_shortest_paths(graph, source=user1,target=user2)])) + '\n')
+            item1 = cols[0].replace('[\'', '').replace('\'', '')
+            item2 = cols[2].replace('\'', '')
+            if item1 not in test_items:
+                test_items[item1] = set()
+            test_items[item1].add(item2)
 
-        fw.close()
+    print('Calculate Similarity')
+    fw = codecs.open('exp_users_similarity.txt', 'w')
+    index = 0
+    for item, item_list in test_items.items():
+        index += 1
+        #print(item)
+        if (index % 100) == 0:
+            print(index)
+
+        similar_items = propagation(graph, item)
+        sorted_items = sorted(similar_items.items(), key=operator.itemgetter(1), reverse=True)
+        item_rank = {}
+        for i in range(len(sorted_items)):
+            item_rank[sorted_items[i][0]] = i
+
+        for u in item_list:
+            try:
+                num_path = similar_items[u]
+                rank = item_rank[u]
+            except:
+                num_path = 0
+                rank = 0
+            fw.write(item + '\t' + str(num_path) + '\t' + u + '\t' + str(rank) + '\t' + str(len(item_rank)) + '\n')
+
+    fw.close()
 
 
 if __name__ == '__main__':
-    train_file = '../data/MovieLens/train.dat'
+    train_file = '../data/yoochoose/train.dat'
     test_file = '../data/MovieLens/test.dat'
     graph_file = 'MovieLens.graph'
     output_file = 'user_coverage.dat'
 
-    recommend_graph = load_graph(graph_file)
+    #recommend_graph = load_graph(graph_file)
     #train_logs = load_raw_logs(train_file, 0, 1)
     #test_logs = load_raw_logs(test_file, 0, 1)
-    #item_logs = load_raw_logs(train_file, 1, 0)
+    item_logs = load_raw_logs(train_file, 1, 0)
 
     #test_logs = load_raw_logs(test_file, 1, 0)
     #exp1(recommend_graph,test_logs)
@@ -355,19 +394,19 @@ if __name__ == '__main__':
     #exp3(test_file, recommend_graph, 5)
     #exp4(test_file, recommend_graph, 'exp4_result.dat')
     #exp5(recommend_graph, test_logs)
-    #exp6(recommend_graph, test_logs)
-    #exp7(recommend_graph, test_logs)
+    #exp6(recommend_graph, train_logs)
+    #exp7(recommend_graph, item_logs)
     '''
     fw = codecs.open('exp_precision.txt', 'w')
-    for i in range(5, 101, 5):
+    for i in range(5, 51, 5):
         fw.write(str(i) + '\t' + str(exp_precision(item_logs, test_logs, 'top_'+ str(i) + '.txt', 'exp_popularity_hit_'+ str(i) + '.txt')) + '\n')
         exp_popularity(test_logs, 'top_'+ str(i) + '.txt', 'exp_popularity_'+ str(i) + '.txt')
     fw.close()
     '''
     #exp_precision(test_logs, item_logs, 'train_sorted.dat', 'exp_precision_5.txt')
-    #exp_popularity(train_logs, 'exp6_result.txt', 'user_degree.txt')
+    exp_popularity(item_logs, 'exp6_result.txt', 'user_degree.txt')
     #exp_item_recommended_times(item_logs, test_logs, 'CF_weight_rating', 'exp_times_weight_rating_hit.csv')
     #exp_diversity('exp_diversity_hit.txt')
-    exp_users_intersection_items(recommend_graph, 'exp6_result.txt')
+    #exp_users_intersection_items(recommend_graph, 'exp6_result.txt')
 
     print('Mission Complete')

@@ -82,5 +82,5 @@ if __name__ == '__main__':
     start_time = time.time()
     similarity = user_similarity(user_logs)
     end_time = time.time()
-    write_matrix(similarity, 'MovieLens.matrix')
+    write_matrix(similarity, 'MovieLens_normal.matrix')
     print("--- %s seconds ---" % (end_time - start_time))

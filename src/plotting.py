@@ -1,5 +1,6 @@
 import codecs
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_scatter(in_file):
@@ -8,14 +9,14 @@ def plot_scatter(in_file):
     with codecs.open(in_file, 'r') as fr:
         for row in fr:
             cols = row.strip().split('\t')
-            x.append(int(cols[0]))
+            x.append(float(cols[0]))
             y.append(float(cols[1]))
     fig, ax = plt.subplots()
 
-    ax.set_xlabel('Top-k User Similarity', fontsize=20)
-    ax.set_ylabel('Precision @ Top-5', fontsize=20)
+    ax.set_xlabel('Number of Triggered Users', fontsize=16)
+    ax.set_ylabel('Number of Triggered Items', fontsize=16)
 
-    ax.plot(x, y)
+    ax.scatter(x, y)
     plt.show()
 
 
@@ -61,7 +62,8 @@ def plot_hist(in_file):
     with codecs.open(in_file, 'r') as fr:
         for row in fr:
             cols = row.strip().split('\t')
-            data1.append(int(cols[1]))
+            data1.append(float(cols[1]))
+            #data1.append(float(cols[3]) / float(cols[4]))
     '''
     with codecs.open(in_file + '_10.txt', 'r') as fr:
         for row in fr:
@@ -91,7 +93,7 @@ def plot_hist(in_file):
     #fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='col', sharey='row')
     fig, ax = plt.subplots()
     ax.hist(data1)
-    ax.set_xlabel('Degree')
+    #ax.set_xlabel('Number of Items')
     '''
     ax1.hist(data1)
     ax2.hist(data2)
@@ -108,11 +110,32 @@ def plot_hist(in_file):
     ax5.set_title('Top 25')
     ax6.set_title('Top 30')
     '''
-    plt.suptitle('Intermediate User Degree Distribution', fontsize = 16)
+    plt.suptitle('yoochoose popularity', fontsize = 16)
     plt.show()
 
 
+def plot_cdf(in_file):
+    data = []
+    with codecs.open(in_file, 'r') as fr:
+        for row in fr:
+            cols = row.strip().split('\t')
+            data.append(float(cols[1]))
+            #data.append(float(cols[3]) / float(cols[4]))
+
+    # prepare cumulative value
+    sorted_data = np.sort(data)
+
+    yvals=np.arange(len(sorted_data))/float(len(sorted_data))
+
+    fig, ax = plt.subplots()
+    plt.suptitle('CDF of Similarity of Effective User', fontsize = 16)
+
+    ax.plot(sorted_data,yvals)
+    ax.set_xlabel('Similarity')
+    plt.show()
+
 if __name__ == '__main__':
-    #plot_scatter('exp_precision.txt')
+    #plot_scatter('exp7_result.txt')
     #plot_line('exp_diversity.txt', 'Top k of User Similarity', 'Recommended Items Diversity')
-    plot_hist('user_degree.txt')
+    plot_hist('exp_popularity.txt')
+    #plot_cdf('exp_users_similarity.txt')
