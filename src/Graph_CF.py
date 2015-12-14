@@ -10,18 +10,15 @@ def load_raw_logs(input_file, user_index, item_index):
         train = {}
         index = 0
         for row in fr:
-            cols = row.strip().split('\t')
+            cols = row.strip().split(',')
             index += 1
-            if index % 10000 == 0:
+            if index % 100000 == 0:
                 print(index)
             user = cols[user_index]
             item = cols[item_index]
             if  user not in train:
-                train[user] = {}
-                train[user][item] = 1
-
-            if item not in train[user]:
-                train[user][item] = 1
+                train[user] = set()
+            train[user].add(item)
 
     return train
 
@@ -29,14 +26,18 @@ def load_raw_logs(input_file, user_index, item_index):
 def create_user_graph(user_log):
     print('Graph creating')
     graph = nx.Graph()
+    index = 0
+    for user, items in user_logs.items():
+        index += 1
+        if index % 1000 == 0:
+            print(index)
+        if len(items) > 1:
+            graph.add_node(user)
 
-    print('User vs category')
-    for user in user_logs:
-        graph.add_node(user)
-        for item in user_logs[user].keys():
-            if item not in graph.nodes():
-                graph.add_node(item)
-            graph.add_edge(user, item)
+            for item in items:
+                if item not in graph.nodes():
+                    graph.add_node(item)
+                graph.add_edge(user, item)
 
     return graph
 
@@ -56,21 +57,29 @@ def create_item_graph(user_log):
     return graph
 
 
-def write_graph(graph, filename):
+def write_graph(part_1, part_2, filename):
     print('Graph storing')
-    with open(filename, 'wb') as fp:
-        pickle.dump(graph, fp)
+    with open(filename + '_1', 'wb') as fp:
+        pickle.dump(part_1, fp)
+
+    with open(filename + '_2', 'wb') as fp:
+        pickle.dump(part_2, fp)
 
 
 if __name__ == '__main__':
-    train_file = '../data/MovieLens/train.dat'
-    graph_file = 'MovieLens.graph'
+    train_file = '../data/yoochoose/click_logs_4.dat'
+    graph_file = 'yoochoose_graph'
 
-    user_logs = load_raw_logs(train_file, 0, 1)
+    session_item = load_raw_logs(train_file, 0, 2)
+    item_session = load_raw_logs(train_file, 2, 0)
+    '''
+    print('number of session', len(user_logs))
     start_time = time.time()
     recommendation_graph = create_user_graph(user_logs)
     end_time = time.time()
     write_graph(recommendation_graph, graph_file)
     print("--- %s seconds ---" % (end_time - start_time))
+    '''
+    write_graph(session_item, item_session, graph_file)
 
 
