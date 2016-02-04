@@ -12,7 +12,7 @@ def load_raw_logs(input_file, user_index, item_index):
         for row in fr:
             cols = row.strip().split(',')
             index += 1
-            if index % 100000 == 0:
+            if index % 1000000 == 0:
                 print(index)
             user = cols[user_index]
             item = cols[item_index]
@@ -27,7 +27,7 @@ def create_user_graph(user_log):
     print('Graph creating')
     graph = nx.Graph()
     index = 0
-    for user, items in user_logs.items():
+    for user, items in user_log.items():
         index += 1
         if index % 1000 == 0:
             print(index)
@@ -47,9 +47,9 @@ def create_item_graph(user_log):
     graph = nx.Graph()
 
     print('User vs category')
-    for user in user_logs:
+    for user in user_log:
         graph.add_node(user)
-        for item in user_logs[user].keys():
+        for item in user_log[user].keys():
             if item not in graph.nodes():
                 graph.add_node(item)
             graph.add_edge(user, item)
@@ -67,11 +67,13 @@ def write_graph(part_1, part_2, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/yoochoose/click_logs_4.dat'
-    graph_file = 'yoochoose_graph'
+    train_file = '../data/yoochoose/click_logs_5.dat'
+    graph_file = 'yoochoose_graph_5'
 
+    start_time = time.time()
     session_item = load_raw_logs(train_file, 0, 2)
     item_session = load_raw_logs(train_file, 2, 0)
+    end_time = time.time()
     '''
     print('number of session', len(user_logs))
     start_time = time.time()
@@ -81,5 +83,6 @@ if __name__ == '__main__':
     print("--- %s seconds ---" % (end_time - start_time))
     '''
     write_graph(session_item, item_session, graph_file)
+    print("--- %s seconds ---" % (end_time - start_time))
 
 

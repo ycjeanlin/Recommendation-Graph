@@ -91,15 +91,38 @@ def split_logs_by_month(click_logs_file):
             month_logs[month].append(row)
 
     for m, logs in month_logs.items():
-        fw = codecs.open('../data/yoochoose/click_logs_' + str(m) + '.dat', 'w')
+        fw = codecs.open('../data/yoochoose/buy_logs_' + str(m) + '.dat', 'w')
         for l in logs:
             fw.write(l)
         fw.close()
+
+def find_item_cat(input_file):
+    index = 0
+    item_cat = {}
+    cats = [str(i) for i in range(1,13)]
+    with codecs.open(input_file, 'r') as fr:
+        for row in fr:
+            index += 1
+            if (index % 1000000) == 0:
+                print(index)
+
+            cols = row.strip().split(',')
+            if cols[2] not in item_cat or (item_cat[cols[2]] != cols[3] and cols[3] in cats):
+                item_cat[cols[2]] = cols[3]
+            elif item_cat[cols[2]] in cats and cols[3] in cats:
+                assert item_cat[cols[2]] == cols[3], 'category conflict'
+
+    fw = codecs.open('../data/yoochoose/item_cat.txt', 'w')
+    for i in item_cat:
+        fw.write(i + ',' + item_cat[i] + '\n')
+
+    fw.close()
 
 
 if __name__ == '__main__':
     buy_logs_file_path = '../data/yoochoose/yoochoose-buys.dat'
     click_logs_file_path = '../data/yoochoose/yoochoose-clicks.dat'
     #extract_purchase_features(buy_logs_file_path, click_logs_file_path, 'purchase_feature.txt')
-    split_logs_by_month(click_logs_file_path)
+    #split_logs_by_month(buy_logs_file_path)
+    find_item_cat(click_logs_file_path)
 

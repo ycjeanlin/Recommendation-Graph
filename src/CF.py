@@ -4,23 +4,21 @@ import pickle
 import time
 
 
-def load_raw_logs(input_file, user_index, POI_index):
+def load_raw_logs(input_file, user_index, item_index):
     with codecs.open(input_file, 'r') as fr:
         train = {}
         index = 0
         for row in fr:
-            cols = row.strip().split('\t')
+            cols = row.strip().split(',')
             index += 1
-            if index % 10000 == 0:
+            if index % 1000000 == 0:
                 print(index)
             user = cols[user_index]
-            item = cols[POI_index]
+            item = cols[item_index]
             if  user not in train:
-                train[user] = {}
-                train[user][item] = 1
+                train[user] = set()
 
-            if item not in train[user]:
-                train[user][item] = 1
+            train[user].add(item)
 
     return train
 
@@ -69,6 +67,42 @@ def user_similarity(train):
     return W
 
 
+def item_similarity(user_item):
+
+    print('Calculate co-rated items between users')
+    C = {}
+    N = {}
+    for u, item_set in user_item.items():
+        for i in item_set:
+            if i not in N:
+                N[i] = 0
+            N[i] += 1
+            for j in item_set:
+                if i == j:
+                    continue
+
+                if i not in C:
+                    C[i] = {}
+                    C[i][j] = 0
+
+                if j not in C[i]:
+                    C[i][j] = 0
+
+                C[i][j] += 1
+
+    print('Calculate final similarity matrix')
+    W = {}
+    for i, related_items in C.items():
+        if i not in W:
+            W[i] = {}
+        for j, cij in related_items.items():
+            if i == '214851097' and j == '214851234':
+                    print('yes')
+            W[i][j] = cij/math.sqrt(N[i] * N[j])
+
+    return W
+
+
 def write_matrix(W, filename):
     print('Graph storing')
     with open(filename, 'wb') as fp:
@@ -76,11 +110,11 @@ def write_matrix(W, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/MovieLens/train.dat'
+    train_file = '../data/yoochoose/yoochoose-clicks.dat'
 
-    user_logs = load_raw_logs(train_file, 0, 1)
+    session_logs = load_raw_logs(train_file, 0, 2)
     start_time = time.time()
-    similarity = user_similarity(user_logs)
+    similarity = item_similarity(session_logs)
     end_time = time.time()
-    write_matrix(similarity, 'MovieLens_normal.matrix')
+    write_matrix(similarity, 'yoochoose.matrix')
     print("--- %s seconds ---" % (end_time - start_time))

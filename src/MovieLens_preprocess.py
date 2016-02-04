@@ -32,15 +32,15 @@ def load_user_logs(input_file, user_index, movie_index, rating_index):
     with codecs.open(input_file, 'r') as fr:
         logs = {}
         for row in fr:
-            cols = row.strip().split('\t')
+            cols = row.strip().split('::')
 
             user = cols[user_index]
             item = cols[movie_index]
             rating = int(cols[rating_index])
             if user not in logs:
-                logs[user] = {}
+                logs[user] = []
 
-            logs[user][item] = rating
+            logs[user].append(item)
 
     return logs
 
@@ -204,18 +204,60 @@ def gen_test_top_5(test_file, out_file):
         fw.write('\n')
     fw.close()
 
+def load_movie_cat():
+    movie_cats = {}
+    cats = set()
+    fr = open('../data/MovieLens/m.dat', 'r')
+    for row in fr:
+        cols = row.strip().split('::')
+        movie_cats[cols[0]] = []
+        for cat in cols[2].split('|'):
+            movie_cats[cols[0]].append(cat)
+            cats.add(cat)
+    fr.close()
+    return movie_cats, cats
+
+def gen_user_preference(logs):
+    preference = {}
+    movie_cats, cats = load_movie_cat()
+    for u in logs:
+        preference[u] = {}
+        for m in logs[u]:
+            for c in movie_cats[m]:
+                if c not in preference[u]:
+                    preference[u][c] = 0
+                preference[u][c] += 1
+    with codecs.open('tmp_preference.csv', 'w') as fw:
+        fw.write('header')
+        for c in sorted(cats):
+            fw.write(',' + c)
+        fw.write('\n')
+        for u in preference:
+            fw.write(u)
+            for c in sorted(cats):
+                if c in preference[u]:
+                    fw.write(',' + str(preference[u][c]))
+                else:
+                    fw.write(',' + str(0))
+            fw.write('\n')
+
+
+
 if __name__ == '__main__':
     input_file = '../data/MovieLens/ratings.dat'
     train_file = '../data/MovieLens/train.dat'
     test_file = '../data/MovieLens/test.dat'
 
+
+    user_logs = load_user_logs(input_file, 0, 1, 2)
+    gen_user_preference(user_logs)
     #item_activity_all, candidate_users = load_raw_logs(input_file, 0, 1, 2)
     #print(len(item_activity_all))
 
     #gen_exp_data_precision(input_file, train_file, test_file)
     #gen_exp_data_recall(input_file, train_file, test_file)
     #user_entropy(train_file)
-    gen_test_top_5(train_file, 'train_sorted.dat')
+    #gen_test_top_5(train_file, 'train_sorted.dat')
 
     print('Mission Complete')
 
