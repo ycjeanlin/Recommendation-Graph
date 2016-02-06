@@ -181,8 +181,6 @@ def plot_boxplot(infile):
     plt.show()
 
 
-
-
 def plot_cdf(in_file1):
     data1 = []
     with codecs.open(in_file1, 'r') as fr:
@@ -243,14 +241,14 @@ def plot_barplot_simple():
     plt.show()
 
 
-def plot_barplot(in_file, x_label, y_label, title):
+def plot_barplot(in_file, x_label, y_label):
     fig, ax = plt.subplots()
 
     ax.set_xlabel(x_label, fontsize=18)
     ax.set_ylabel(y_label, fontsize=18)
     header = []
 
-    ind = np.arange(20,180,30)
+    ind = np.arange(3.6, 31, 5)
     with codecs.open(in_file, 'r') as fr:
         data_frame = {}
         x = []
@@ -260,7 +258,7 @@ def plot_barplot(in_file, x_label, y_label, title):
             if not labels:
                 for i in range(len(cols)):
                     if i == 0:
-                        x.append(log(float(cols[i])+1))
+                        x.append(float(cols[i]))
                     else:
                         if i not in data_frame:
                             data_frame[i] = []
@@ -269,7 +267,7 @@ def plot_barplot(in_file, x_label, y_label, title):
                 for l in cols:
                     header.append(l)
                 labels = False
-        width = 5
+        width = 0.7
         colors = ['w', 'w', 'grey', 'w', 'k']
         patterns = ['/', '/', '', ' ', '']
         for i in sorted(data_frame):
@@ -277,12 +275,14 @@ def plot_barplot(in_file, x_label, y_label, title):
             ax.bar(ind+width*(i-1),  data_frame[i], width, label = header[i], color=colors[i], edgecolor='k', hatch = patterns[i])
 
     ax.set_xticks(ind + width * 2)
-    ax.axis([15, 200, 0.10, 0.50])
-    ax.plot([15, 200], [0.227484407136765, 0.227484407136765], '--', label = 'Min CF All_Recall@5')
-    ax.plot([15, 200], [0.392007926023778, 0.392007926023778], '--', label = 'Max CF All_Recall@5')
+    ax.axis([1, 34, 0.10, 0.60])
+    plt.xticks(fontsize = '14')
+    plt.yticks(fontsize = '14')
+    #ax.plot([15, 200], [0.227484407136765, 0.227484407136765], '--', label = 'Min CF All_Recall@5')
+    #ax.plot([15, 200], [0.392007926023778, 0.392007926023778], '--', label = 'Max CF All_Recall@5')
 
     ax.legend(loc='best')
-    plt.suptitle(title, fontsize = 20)
+    #plt.suptitle(title, fontsize = 20)
     plt.show()
 
 
@@ -290,8 +290,8 @@ if __name__ == '__main__':
     #plot_scatter('exp7_result.txt')
     #plot_line('tmp_exp.csv', 'Exp(position)', 'Probability', 'Average Execution Time RWRG')
     #plot_line('exp_recall.csv', 'Number of Iterations', 'Recall', 'update itemset-based RWRG Recall@5')
-    plot_boxplot('tmp_time.csv')
+    #plot_boxplot('tmp_time.csv')
     #plot_hist('tmp_exp.csv')
     #plot_cdf('tmp_time.csv')
-    #plot_barplot('tmp_exp.csv', 'Iteration', 'All_Recall', 'RW All_Recall@5')
+    plot_barplot('tmp_exp.csv', 'Iteration', 'Pre_Recall')
     #plot_barplot_simple()
