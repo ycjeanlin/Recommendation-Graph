@@ -294,7 +294,7 @@ def purchase_probability(click_log, buy_log):
 
 def main():
     train_file = '../data/yoochoose/click_logs_4.dat'
-    buy_logs_file = '../data/yoochoose/buy_logs_4.dat'
+    buy_logs_file = '../data/yoochoose/buy_logs_5.dat'
     click_logs_file = '../data/yoochoose/click_logs_5.dat'
 
     #action_time_diff(train_file)
@@ -304,17 +304,16 @@ def main():
     #CTRs = {}
     recalls = {}
     #item_popularity = cal_popularity(train_file, 2)
-    session_length_dist(click_logs, buy_logs)
+    #session_length_dist(click_logs, buy_logs)
     '''
-    for k in range(30, 210, 10):
+    for k in range(30, 201, 30):
         print(('top %s')%(k))
 
-        pre_recall, post_recall, recall = exp_recall(('RWRG_update_itemset_top_%s.txt')%(k), buy_logs)
+        pre_recall, post_recall, recall = exp_recall(('D:\\Exp Result\\CRRRW_scalability\\iteration_%s.txt')%(k), buy_logs)
         recalls[k] = []
         recalls[k].append(str(pre_recall))
         recalls[k].append(str(post_recall))
         recalls[k].append(str(recall))
-
         exp_popularity(item_popularity, ('update_item_base_CF_top_%s.txt')%(k), ('exp_popularity_top_%s.csv')%(k))
 
         CTR = offline_CTR(('D:\Exp Result\Item-based CF\item_base_CF_top_%s.txt')%(k), click_logs)
@@ -322,15 +321,16 @@ def main():
         CTRs[k] = []
         CTRs[k].append(str(CTR))
         CTRs[k].append(str(CTR2))
-    fw = codecs.open('exp_recall.csv', 'w')
+    '''
+    '''
+    fw = codecs.open('D:\\Exp Result\\CRRRW_scalability\\exp_recall.csv', 'w')
     fw.write('top-k,Pre_Recall,Post_Recall,All_Recall\n')
     for k in sorted(recalls):
         fw.write(str(k) + ',' + (',').join(recalls[k]) + '\n')
     fw.close()
-
-    target_visit_rate(click_logs, buy_logs, 'exp_visit_rate.csv')
-    click_similarity(click_logs, buy_logs, 'yoochoose.matrix', 'exp_click_sim.csv')
     '''
-
+    #target_visit_rate(click_logs, buy_logs, 'exp_visit_rate.csv')
+    #click_similarity(click_logs, buy_logs, 'yoochoose.matrix', 'exp_click_sim.csv')
+    purchase_probability(click_logs, buy_logs)
 
 main()

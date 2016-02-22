@@ -40,7 +40,7 @@ def plot_line(in_file, x_label, y_label, title):
             if not labels:
                 for i in range(len(cols)):
                     if i == 0:
-                        x.append(log(float(cols[i]) + 1))
+                        x.append(float(cols[i]))
                     else:
                         if i not in data_frame:
                             data_frame[i] = []
@@ -160,7 +160,7 @@ def plot_boxplot(infile):
     print('Med: ',q2)
     print('IQR: ', (q3 - q1))
 
-    print('Without')
+    print('With')
     a = np.array(data2)
     q1 = np.percentile(a, 25)
     q2 = np.percentile(a, 50)
@@ -288,10 +288,10 @@ def plot_barplot(in_file, x_label, y_label):
 
 if __name__ == '__main__':
     #plot_scatter('exp7_result.txt')
-    #plot_line('tmp_exp.csv', 'Exp(position)', 'Probability', 'Average Execution Time RWRG')
+    plot_line('tmp_exp.csv', 'Exp(position)', 'Probability', 'Average Execution Time RWRG')
     #plot_line('exp_recall.csv', 'Number of Iterations', 'Recall', 'update itemset-based RWRG Recall@5')
-    #plot_boxplot('tmp_time.csv')
+    #plot_boxplot('tmp_exp.csv')
     #plot_hist('tmp_exp.csv')
     #plot_cdf('tmp_time.csv')
-    plot_barplot('tmp_exp.csv', 'Iteration', 'Pre_Recall')
+    #plot_barplot('tmp_exp.csv', 'Iteration', 'Pre_Recall')
     #plot_barplot_simple()
