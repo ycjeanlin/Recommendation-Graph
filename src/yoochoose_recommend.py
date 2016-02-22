@@ -38,7 +38,7 @@ def load_graph(filename):
     return W
 
 
-def item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, target_item):
+def SRRCF_no_update(s_i_edge, i_s_edge, clicked_set, top_k, target_item):
     recommend_items = []
     if target_item not in i_s_edge:
         return recommend_items
@@ -77,14 +77,9 @@ def item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, target_item):
     return recommend_items
 
 
-def updated_item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, target_item, session_id):
+def SRRCF(s_i_edge, i_s_edge, clicked_set, top_k, target_item, session_id):
     recommend_items = []
     if target_item not in i_s_edge:
-        if session_id not in s_i_edge:
-            s_i_edge[session_id] = set()
-        i_s_edge[target_item] = set()
-        s_i_edge[session_id].add(target_item)
-        i_s_edge[target_item].add(session_id)
         return recommend_items
 
     sessions = i_s_edge[target_item]
@@ -118,63 +113,54 @@ def updated_item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, target_item, s
             recommend_items.append(sorted_voters[v][0])
             rank += 1
         v += 1
-    if session_id not in s_i_edge:
-        s_i_edge[session_id] = set()
 
-    s_i_edge[session_id].add(target_item)
-    i_s_edge[target_item].add(session_id)
     return recommend_items
 
 
-def increment_item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k):
+def CRRCF_no_update(s_i_edge, i_s_edge, clicked_set, top_k, target_item, session_id, candidate_set):
     recommend_items = []
     item_score = {}
-    for ci in clicked_set:
-        if ci in i_s_edge:
-            sessions = i_s_edge[ci]
-            pair_count = {}
-            for s in sessions:
-                item_list = s_i_edge[s]
 
-                for i in item_list:
-                    if i not in pair_count:
-                        pair_count[i] = 0
-                    pair_count[i] += 1
+    if target_item in i_s_edge:
+        sessions = i_s_edge[target_item]
+        pair_count = {}
+        for s in sessions:
+            item_list = s_i_edge[s]
 
-            speedup = {}
-            degree1 = len(sessions)
-            for i in pair_count:
-                degree2 = len(i_s_edge[i])
-                if degree2 not in speedup:
-                    speedup[degree2] = sqrt(degree1 * degree2)
-                if i not in item_score:
-                    item_score[i] = 0
-                item_score[i] += float(pair_count[i] / speedup[degree2])
+            for i in item_list:
+                if i not in pair_count:
+                    pair_count[i] = 0
+                pair_count[i] += 1
 
-    sorted_voters = sorted(item_score.items(), key=operator.itemgetter(1), reverse=True)
+        speedup = {}
+        degree1 = len(sessions)
+        for i in pair_count:
+            degree2 = len(i_s_edge[i])
+            if degree2 not in speedup:
+                speedup[degree2] = sqrt(degree1 * degree2)
+            if i not in candidate_set:
+                candidate_set[i] = 0
+            candidate_set[i] += float(pair_count[i] / speedup[degree2])
 
-    rank = 0
-    v = 0
-    while rank < top_k:
-        if v == len(sorted_voters):
-            break
+        sorted_voters = sorted(candidate_set.items(), key=operator.itemgetter(1), reverse=True)
 
-        if sorted_voters[v][0] not in clicked_set:
-            recommend_items.append(sorted_voters[v][0])
-            rank += 1
-        v += 1
+        rank = 0
+        v = 0
+        while rank < top_k:
+            if v == len(sorted_voters):
+                break
 
-    return recommend_items
+            if sorted_voters[v][0] not in clicked_set:
+                recommend_items.append(sorted_voters[v][0])
+                rank += 1
+            v += 1
+
+    return recommend_items, candidate_set
 
 
-def update_increment_item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, target_item, session_id, candidate_set):
+def CRRCF(s_i_edge, i_s_edge, clicked_set, top_k, target_item, session_id, candidate_set):
     recommend_items = []
     if target_item not in i_s_edge:
-        if session_id not in s_i_edge:
-            s_i_edge[session_id] = set()
-        i_s_edge[target_item] = set()
-        s_i_edge[session_id].add(target_item)
-        i_s_edge[target_item].add(session_id)
         return recommend_items, candidate_set
 
 
@@ -188,13 +174,15 @@ def update_increment_item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, targe
                 pair_count[i] = 0
             pair_count[i] += 1
 
+    speedup = {}
     degree1 = len(sessions)
-    for i, count in pair_count.items():
+    for i in pair_count:
         degree2 = len(i_s_edge[i])
-
-        if i not in candidate_set:
-            candidate_set[i] = 0
-        candidate_set[i] += float(count / (degree1 + degree2 - count))
+        if degree2 not in speedup:
+            speedup[degree2] = sqrt(degree1 * degree2)
+            if i not in candidate_set:
+                candidate_set[i] = 0
+            candidate_set[i] += float(pair_count[i] / speedup[degree2])
 
     sorted_voters = sorted(candidate_set.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -209,11 +197,6 @@ def update_increment_item_based_CF(s_i_edge, i_s_edge, clicked_set, top_k, targe
             rank += 1
         v += 1
 
-    if session_id not in s_i_edge:
-        s_i_edge[session_id] = set()
-
-    s_i_edge[session_id].add(target_item)
-    i_s_edge[target_item].add(session_id)
     return recommend_items, candidate_set
 
 
@@ -221,7 +204,7 @@ def choose_next_node(candidates):
     return random.sample(candidates, 1)[0]
 
 
-def item_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_item, steps, iter):
+def SRRRW_no_update(s_i_edge, i_s_edge, clicked_set, top_k, start_item, steps, iter):
     recommend_items = []
     if start_item not in i_s_edge:
         return recommend_items
@@ -265,14 +248,9 @@ def item_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_item, s
     return recommend_items
 
 
-def update_item_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_item, session_id, steps, iter):
+def SRRRW(s_i_edge, i_s_edge, clicked_set, top_k, start_item, session_id, steps, iter):
     recommend_items = []
     if start_item not in i_s_edge:
-        if session_id not in s_i_edge:
-            s_i_edge[session_id] = set()
-        i_s_edge[start_item] = set()
-        s_i_edge[session_id].add(start_item)
-        i_s_edge[start_item].add(session_id)
         return recommend_items
 
     visit_count = {}
@@ -310,12 +288,6 @@ def update_item_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_
             recommend_items.append(sorted_voters[v][0])
             rank += 1
         v += 1
-
-    if session_id not in s_i_edge:
-        s_i_edge[session_id] = set()
-
-    s_i_edge[session_id].add(start_item)
-    i_s_edge[start_item].add(session_id)
 
     return recommend_items
 
@@ -367,7 +339,7 @@ def itemset_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, steps, ite
     return recommend_items
 
 
-def cumulative_itemset_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_item, steps, iter, candidate_set):
+def CRRRW_no_update(s_i_edge, i_s_edge, clicked_set, top_k, start_item, steps, iter, candidate_set):
     recommend_items = []
     if start_item not in i_s_edge:
         return recommend_items, candidate_set
@@ -410,7 +382,7 @@ def cumulative_itemset_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k,
     return recommend_items, candidate_set
 
 
-def update_cumulative_itemset_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_item, session_id, steps, iter, candidate_set):
+def CRRRW(s_i_edge, i_s_edge, clicked_set, top_k, start_item, session_id, steps, iter, candidate_set):
     recommend_items = []
     if start_item not in i_s_edge:
         if session_id not in s_i_edge:
@@ -504,6 +476,16 @@ def continue_items_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, sta
     return recommend_items
 
 
+def update_RG(s_i_edge, i_s_edge, s_id, clicked_set):
+    if s_id not in s_i_edge:
+        s_i_edge[s_id] = set(clicked_set)
+
+    for i in s_i_edge[s_id]:
+        if i not in i_s_edge:
+            i_s_edge[i] = set()
+        i_s_edge[i].add(s_id)
+
+
 def write_graph(part_1, part_2, filename):
     print('Graph storing')
     with open(filename + '_1', 'wb') as fp:
@@ -514,31 +496,38 @@ def write_graph(part_1, part_2, filename):
 
 
 if __name__ == '__main__':
-    buy_logs_file = '../data/yoochoose/buy_logs_6.dat'
-    click_logs_file = '../data/yoochoose/click_logs_6.dat'
+    buy_logs_file = '../data/yoochoose/test_buy.dat'
+    click_logs_file = '../data/yoochoose/test_click.dat'
 
     print('Load logs')
     session_logs = load_raw_logs(click_logs_file, 0, 2)
     buy_logs = load_raw_logs(buy_logs_file, 0, 2)
 
-    session_item = load_graph('yoochoose_graph_5_1')
-    item_session = load_graph('yoochoose_graph_5_2')
+    #session_item = load_graph('yoochoose_graph_1')
+    #item_session = load_graph('yoochoose_graph_2')
     index = 0
     timing = {}
     print('Recommendation starts')
-    for iteration in range(30, 210, 10):
-        fw = codecs.open('RWRG_update_itemset_top_' + str(iteration) + '.txt', 'w')
+    for iteration in range(60, 70, 30):
+    #for topk in [5,5,10,15,20,25,30]:
+        fw = codecs.open('iteration_' + str(iteration) + '.txt', 'w')
+        #fw = codecs.open('top' + str(topk) + '.txt', 'w')
         print('=============', iteration, '===============')
         print('Load graphs')
-        #session_item = load_graph('yoochoose_graph_1')
-        #item_session = load_graph('yoochoose_graph_2')
+        session_item = load_graph('yoochoose_graph_1')
+        item_session = load_graph('yoochoose_graph_2')
         index = 0
+        click = 5973371
+        pre_click = click
         start_time = time.time()
         for s, logs in session_logs.items():
             candidate_set = {}
-            index += 1
-            if (index % 100000) == 0:
-                print(index)
+            click += len(logs)
+            if (pre_click + 1000000) < click:
+                print(click)
+                pre_click = click
+                end_time = time.time()
+                timing[click] = float((end_time - start_time) / index)
 
             if s in buy_logs:
                 post = False
@@ -549,16 +538,22 @@ if __name__ == '__main__':
                         if not post:
                             post = True
                     else:
+                        index += 1
                         visited_items.add(i)
-                        #update_cumulative_itemset_based_random_walk(s_i_edge, i_s_edge, clicked_set, top_k, start_item, session_id, steps, iter, candidate_set)
-                        recommend_list, candidate_set = update_cumulative_itemset_based_random_walk(session_item, item_session, visited_items, 5, i, s, 2, iteration, candidate_set)
+                        #recommend_list = SRRCF(session_item, item_session, visited_items, topk, i, s)
+                        #recommend_list, candidate_set = CRRCF(session_item, item_session, visited_items, topk, i, s, candidate_set)
+                        #recommend_list = SRRRW(session_item, item_session, visited_items, 5, i, s, 2, iteration)
+                        recommend_list, candidate_set = CRRRW(session_item, item_session, visited_items, 5, i, s, 2, iteration, candidate_set)
                         fw.write(s + '\t' + i + '\t' + str(post) + '\t' + ('\t').join(recommend_list) + '\n')
 
-        fw.close()
-        end_time = time.time()
-        timing[iteration] = end_time - start_time
+            update_RG(session_item, item_session, s, logs)
 
-    fw = codecs.open('RWRG_update_itemset_top_5.csv', 'w')
+        fw.close()
+        #end_time = time.time()
+        #timing[iteration] = end_time - start_time
+        #timing[topk] = end_time - start_time
+
+    fw = codecs.open('exp_time.csv', 'w')
     for k in sorted(timing):
         fw.write('%s, %s\n' % (k, timing[k]))
 

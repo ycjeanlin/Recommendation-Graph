@@ -295,21 +295,21 @@ def purchase_probability(click_log, buy_log):
 def main():
     train_file = '../data/yoochoose/click_logs_4.dat'
     buy_logs_file = '../data/yoochoose/buy_logs_4.dat'
-    click_logs_file = '../data/yoochoose/click_logs_5.dat'
+    click_logs_file = '../data/yoochoose/click_logs_4.dat'
 
     #action_time_diff(train_file)
     #item_life_cycle('../data/yoochoose/click_logs_4.dat')
     buy_logs = load_raw_logs(buy_logs_file, 0, 2)
-    click_logs = load_raw_logs(train_file, 0, 2)
+    click_logs = load_raw_logs(click_logs_file, 0, 2)
     #CTRs = {}
     recalls = {}
     #item_popularity = cal_popularity(train_file, 2)
-    session_length_dist(click_logs, buy_logs)
+    #session_length_dist(click_logs, buy_logs)
     '''
-    for k in range(30, 210, 10):
+    for k in range(5, 31, 5):
         print(('top %s')%(k))
 
-        pre_recall, post_recall, recall = exp_recall(('RWRG_update_itemset_top_%s.txt')%(k), buy_logs)
+        pre_recall, post_recall, recall = exp_recall(('D:\\Exp Result\\SRRCF\\SRRCF_top_%s.txt')%(k), buy_logs)
         recalls[k] = []
         recalls[k].append(str(pre_recall))
         recalls[k].append(str(post_recall))
@@ -322,15 +322,15 @@ def main():
         CTRs[k] = []
         CTRs[k].append(str(CTR))
         CTRs[k].append(str(CTR2))
-    fw = codecs.open('exp_recall.csv', 'w')
+
+    fw = codecs.open('D:\\Exp Result\\SRRCF\\exp_recall.csv', 'w')
     fw.write('top-k,Pre_Recall,Post_Recall,All_Recall\n')
     for k in sorted(recalls):
         fw.write(str(k) + ',' + (',').join(recalls[k]) + '\n')
     fw.close()
-
     target_visit_rate(click_logs, buy_logs, 'exp_visit_rate.csv')
     click_similarity(click_logs, buy_logs, 'yoochoose.matrix', 'exp_click_sim.csv')
     '''
-
+    purchase_probability(click_logs, buy_logs)
 
 main()
