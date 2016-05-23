@@ -67,8 +67,8 @@ def write_graph(part_1, part_2, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/yoochoose/click_logs_5.dat'
-    graph_file = 'yoochoose_graph_5'
+    train_file = '../data/yoochoose/click_logs_4.dat'
+    graph_file = 'yoochoose_graph'
 
     start_time = time.time()
     session_item = load_raw_logs(train_file, 0, 2)

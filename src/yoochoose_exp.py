@@ -294,29 +294,29 @@ def purchase_probability(click_log, buy_log):
 
 def main():
     train_file = '../data/yoochoose/click_logs_4.dat'
-    buy_logs_file = '../data/yoochoose/buy_logs_5.dat'
+    buy_logs_file = '../data/yoochoose/buy_logs_4.dat'
     click_logs_file = '../data/yoochoose/click_logs_5.dat'
 
 
     #action_time_diff(train_file)
     #item_life_cycle('../data/yoochoose/click_logs_4.dat')
     buy_logs = load_raw_logs(buy_logs_file, 0, 2)
-    click_logs = load_raw_logs(click_logs_file, 0, 2)
+    #click_logs = load_raw_logs(click_logs_file, 0, 2)
     #CTRs = {}
     recalls = {}
     #item_popularity = cal_popularity(train_file, 2)
     #session_length_dist(click_logs, buy_logs)
 
-    for k in range(30, 201, 30):
+    for k in range(2, 3, 3):
         print(('top %s')%(k))
 
-        pre_recall, post_recall, recall = exp_recall(('D:\\Exp Result\\CRRRW_scalability\\iteration_%s.txt')%(k), buy_logs)
+        pre_recall, post_recall, recall = exp_recall(('iteration_200_2_step.txt'), buy_logs)
 
         recalls[k] = []
         recalls[k].append(str(pre_recall))
         recalls[k].append(str(post_recall))
         recalls[k].append(str(recall))
-        exp_popularity(item_popularity, ('update_item_base_CF_top_%s.txt')%(k), ('exp_popularity_top_%s.csv')%(k))
+        #exp_popularity(item_popularity, ('update_item_base_CF_top_%s.txt')%(k), ('exp_popularity_top_%s.csv')%(k))
         '''
         CTR = offline_CTR(('D:\Exp Result\Item-based CF\item_base_CF_top_%s.txt')%(k), click_logs)
         CTR2 = offline_CTR(('D:\Exp Result\\updated item-based CF\\update_item_base_CF_top_%s.txt')%(k), click_logs)
@@ -324,9 +324,9 @@ def main():
         CTRs[k].append(str(CTR))
         CTRs[k].append(str(CTR2))
         '''
-    fw = codecs.open('D:\\Exp Result\\SRRCF\\exp_recall.csv', 'w')
+    fw = codecs.open('exp_recall.csv', 'a')
 
-    fw.write('top-k,Pre_Recall,Post_Recall,All_Recall\n')
+    #fw.write('top-k,Pre_Recall,Post_Recall,All_Recall\n')
     for k in sorted(recalls):
         fw.write(str(k) + ',' + (',').join(recalls[k]) + '\n')
     fw.close()
@@ -335,6 +335,6 @@ def main():
     click_similarity(click_logs, buy_logs, 'yoochoose.matrix', 'exp_click_sim.csv')
     '''
 
-    #purchase_probability(click_logs, buy_logs)
+
 
 main()

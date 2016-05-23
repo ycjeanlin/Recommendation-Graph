@@ -96,8 +96,6 @@ def item_similarity(user_item):
         if i not in W:
             W[i] = {}
         for j, cij in related_items.items():
-            if i == '214851097' and j == '214851234':
-                    print('yes')
             W[i][j] = cij/math.sqrt(N[i] * N[j])
 
     return W
@@ -110,11 +108,11 @@ def write_matrix(W, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/yoochoose/yoochoose-clicks.dat'
+    train_file = 'test.csv'
 
     session_logs = load_raw_logs(train_file, 0, 2)
     start_time = time.time()
     similarity = item_similarity(session_logs)
     end_time = time.time()
-    write_matrix(similarity, 'yoochoose.matrix')
+    write_matrix(similarity, 'tmp_5900k.matrix')
     print("--- %s seconds ---" % (end_time - start_time))

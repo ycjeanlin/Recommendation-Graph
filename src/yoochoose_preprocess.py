@@ -1,4 +1,37 @@
 import codecs
+from datetime import datetime
+import operator
+import pickle
+import logging
+import time
+import numpy as np
+
+
+def load_raw_logs(input_file, session_index, item_index):
+    '''
+    load yoochoose-clicks.dat and yoochoose-buys.dat into a list of each session
+    :param input_file: yoochoose-clicks.dat or yoochoose-buys.dat
+    :param session_index: the index of the session id of a row in the data file
+    :param item_index: the index of the item id of a row in the data file
+    :return logs: lists of click logs divided by sessions
+    '''
+    with codecs.open(input_file, 'r') as fr:
+        logs = {}
+        index = 0
+        for row in fr:
+            cols = row.strip().split(',')
+            index += 1
+            if index % 1000000 == 0:
+                print(index)
+            session = cols[session_index]
+            item = cols[item_index]
+            if  session not in logs:
+                logs[session] = []
+
+            logs[session].append(item)
+
+    return logs
+
 
 def extract_purchase_features(buy_logs_file, click_logs_file, output_file):
     '''
@@ -66,6 +99,30 @@ def extract_purchase_features(buy_logs_file, click_logs_file, output_file):
         fw.close()
 
 
+def load_stop_time(input_file, session_index, item_index, time_index):
+    T = {}
+    with codecs.open(input_file, 'r') as fr:
+        pre_click_time = datetime.now()
+        pre_click_item = '0'
+        s_id = '0'
+        for row in fr:
+            cols = row.strip().split(',')
+            if s_id != cols[session_index]:
+                s_id = cols[session_index]
+                pre_click_time = datetime.strptime(cols[time_index], '%Y-%m-%dT%H:%M:%S.%fZ')
+                pre_click_item = cols[item_index]
+                T[s_id] = {}
+            else:
+                post_click_time = datetime.strptime(cols[time_index], '%Y-%m-%dT%H:%M:%S.%fZ')
+                if post_click_time > pre_click_time:
+                    T[s_id][pre_click_item] = (post_click_time - pre_click_time).seconds
+                    pre_click_item = cols[item_index]
+                    pre_click_time = post_click_time
+                elif post_click_time < pre_click_time:
+                    raise Exception(str(pre_click_time) + '\t' + str(post_click_time) +'Time order error')
+    return T
+
+
 def split_logs_by_month(click_logs_file):
     '''
     split the yoochoose-clicks.dat by month
@@ -96,6 +153,7 @@ def split_logs_by_month(click_logs_file):
             fw.write(l)
         fw.close()
 
+
 def find_item_cat(input_file):
     index = 0
     item_cat = {}
@@ -119,10 +177,112 @@ def find_item_cat(input_file):
     fw.close()
 
 
+def write_struct(W, filename):
+    print('Graph storing')
+    with open(filename, 'wb') as fp:
+        pickle.dump(W, fp)
+
+
+def mutiply_matrices(M1, M2):
+    new_M = {}
+    for i in M1:
+        for j in M1[i]:
+            for k in M2[j]:
+                if i not in new_M:
+                    new_M[i] = {}
+
+                if k not in new_M[i]:
+                    new_M[i][k] = 0
+
+                new_M[i][k] += M1[i][j]*M2[j][k]
+
+    return new_M
+
+def create_II_matrix(infile):
+    logger = logging.getLogger('create_II_matrix')
+    si_logs = load_raw_logs(infile, 0, 2)
+    is_logs = load_raw_logs(infile, 2, 0)
+    SI = {}
+    IS = {}
+    II = {}
+
+    logger.info('Load session logs...')
+    for s, log in si_logs.items():
+        degree_s = len(log)
+        for i in log:
+            if s not in IS:
+                IS[s] = {}
+            IS[s][i] = float(1 / degree_s)
+
+    logger.info('Load item logs...')
+    for i, log in is_logs.items():
+        degree_i = len(log)
+        for s in log:
+            if i not in SI:
+                SI[i] = {}
+            SI[i][s] = float(1 / degree_i)
+
+    logger.info('Create II matrix...')
+    II = mutiply_matrices(SI, IS)
+
+    logger.info('Output II matrix...')
+    write_struct(II, 'II.matrix')
+
+
+def export_matrix(infile):
+    session_logs = load_raw_logs(infile, 0, 1)
+    item_to_id = {}
+    user_to_id = {}
+    u_id = 0
+    i_id = 0
+    for u, log in session_logs.items():
+        if len(log) > 2:
+            user_to_id[u] = u_id
+            u_id += 1
+
+            for i in log:
+                if i not in item_to_id:
+                    item_to_id[i] = i_id
+                    i_id += 1
+
+    print(len(user_to_id), len(item_to_id))
+    R = np.zeros((len(user_to_id), len(item_to_id)), dtype='float32')
+    for u, log in session_logs.items():
+        if len(log) > 2:
+            u_id = user_to_id[u]
+            for i in log:
+                i_id = item_to_id[i]
+                R[u_id][i_id] += 1
+
+    write_struct(R, 'occur.matrix')
+
+    fw = codecs.open('u_id.hash', 'w')
+    for u in user_to_id:
+        fw.write(str(u_id[u]) + '\t' + u + '\n')
+    fw.close()
+
+    fw = codecs.open('i_id.hash', 'w')
+    for u in user_to_id:
+        fw.write(str(u_id[u]) + '\t' + u + '\n')
+    fw.close()
+
+
+
 if __name__ == '__main__':
-    buy_logs_file_path = '../data/yoochoose/yoochoose-buys.dat'
-    click_logs_file_path = '../data/yoochoose/yoochoose-clicks.dat'
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+
+    buy_logs_file_path = '../data/yoochoose/buy_logs_4.dat'
+    click_logs_file_path = '../data/CA_foursquare/conv_train.dat'
+    start_time = time.time()
+
+    export_matrix(click_logs_file_path)
+    #create_II_matrix(click_logs_file_path)
+
+    end_time = time.time()
+    print("--- %s seconds ---" % (end_time - start_time))
     #extract_purchase_features(buy_logs_file_path, click_logs_file_path, 'purchase_feature.txt')
     #split_logs_by_month(buy_logs_file_path)
-    find_item_cat(click_logs_file_path)
+    #find_item_cat(click_logs_file_path)
+
 

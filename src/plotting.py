@@ -1,9 +1,29 @@
 import codecs
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
 import matplotlib.cm as cm
-import numpy as np
+from numpy import arange, array, percentile, zeros, meshgrid, sort
 from math import log
 from scipy.stats import gaussian_kde
+
+def plot_surface(in_file):
+    count = zeros(shape=(29,29))
+    with codecs.open(in_file, 'r') as fr:
+        for row in fr:
+            cols = row.strip().split(',')
+            x = int(cols[0])
+            y = int(cols[1])
+            if x < 20 and y < 20:
+                count[x-1][y-1] += 1
+    x = y = arange(0,29,1)
+    X, Y = meshgrid(x, y)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_wireframe(X, Y, count)
+    ax.set_xlabel('Stop Time Rank')
+    ax.set_ylabel('Similarity Rank')
+    ax.set_zlabel('Count')
+    plt.show()
 
 
 def plot_scatter(in_file):
@@ -11,9 +31,10 @@ def plot_scatter(in_file):
     y = []
     with codecs.open(in_file, 'r') as fr:
         for row in fr:
-            cols = row.strip().split('\t')
-            x.append(float(cols[0]))
-            y.append(float(cols[1]))
+            cols = row.strip().split(',')
+            if float(cols[0]) < 30 and float(cols[1]) < 30:
+                x.append(float(cols[0]))
+                y.append(float(cols[1]))
     fig, ax = plt.subplots()
 
     ax.set_xlabel('Number of Triggered Users', fontsize=16)
@@ -53,90 +74,40 @@ def plot_line(in_file, x_label, y_label, title):
         for i in sorted(data_frame):
             #if i != 2 and i != 4:
             ax.plot(x, data_frame[i], label = header[i])
-    #ax.axis([30, 200, 0.14, 0.35])
+    #ax.axis([0, 400, 0.09, 0.20])
     #ax.plot([30, 200], [0.345765808706704, 0.345765808706704], '--', label = 'Ref Pre_Recall')
     #ax.plot([30, 200], [0.404336545589325, 0.404336545589325], '--', label = 'Ref Post_Recall')
-    #ax.plot([30, 200], [0.392007926023778, 0.392007926023778], '--', label = 'Ref All_Recall')
+    #ax.plot([0, 400], [0.15161722808781633, 0.15161722808781633], '--', label = 'CRRCF@5')
     #ax.plot([30, 200], [0.3428995022768188, 0.3428995022768188], '--', label = 'Max Itemset-Based RWRG')
     #ax.plot([30, 200], [0.004544589, 0.004544589], '--', label = 'item-based CF')
     #ax.plot([30, 200], [0.022939113, 0.022939113], '--', label = 'itemset-based CF')
     ax.legend(loc='best')
     #plt.suptitle('Recall@5 with Item-based 2-Step Random Walk on RG', fontsize = 16)
-    #plt.suptitle(title, fontsize = 16)
+    plt.suptitle(title, fontsize = 16)
     plt.show()
 
 
-def plot_hist(infile1):
-    '''
-    data1 = []
-    data2 = []
-    data3 = []
-    data4 = []
-    data5 = []
-    data6 = []
-
-    with codecs.open(in_file + '_5.csv', 'r') as fr:
-        for row in fr:
-            cols = row.strip().split(',')
-            data1.append(float(cols[1]))
-            #data1.append(float(cols[3]) / float(cols[4]))
-
-    with codecs.open(in_file + '_10.csv', 'r') as fr:
-        for row in fr:
-            cols = row.strip().split(',')
-            data2.append(float(cols[1]))
-
-    with codecs.open(in_file + '_15.csv', 'r') as fr:
-        for row in fr:
-            cols = row.strip().split(',')
-            data3.append(float(cols[1]))
-
-    with codecs.open(in_file + '_20.csv', 'r') as fr:
-        for row in fr:
-            cols = row.strip().split(',')
-            data4.append(float(cols[1]))
-
-    with codecs.open(in_file + '_25.csv', 'r') as fr:
-        for row in fr:
-            cols = row.strip().split(',')
-            data5.append(float(cols[1]))
-
-    with codecs.open(in_file + '_30.csv', 'r') as fr:
-        for row in fr:
-            cols = row.strip().split(',')
-            data6.append(float(cols[1]))
-
-    fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='col', sharey='row')
-    ax1.hist(data1)
-    ax2.hist(data2)
-    ax3.hist(data3)
-    ax4.hist(data4)
-    ax5.hist(data5)
-    ax6.hist(data6)
-
-    ax5.set_xlabel('log(popularity) of Recommended Items', fontsize = 14)
-    ax1.set_title('Top 5')
-    ax2.set_title('Top 10')
-    ax3.set_title('Top 15')
-    ax4.set_title('Top 20')
-    ax5.set_title('Top 25')
-    ax6.set_title('Top 30')
-    '''
+def plot_hist(infile1, is_pdf):
     data1 = []
     with codecs.open(infile1, 'r') as fr:
         for row in fr:
             cols = row.strip().split(',')
-            data1.append(float(cols[0]))
+            data1.append(int(cols[0]))
 
 
+    fig, ax1 = plt.subplots()
+    #bins = range(0, 100, 3)
+    #ax.hist(data1, bins, color='white')
+    if is_pdf:
+        ax1.hist(data1, bins=arange(min(data1), 50, 1), normed = 1, color='white')
+    else:
+        ax1.hist(data1, bins=arange(min(data1), 50, 1), color='white')
 
-    fig, ax = plt.subplots()
-    bins = range(0, 200, 3)
-    ax.hist(data1, bins, label = 'non', color='white')
 
-    ax.set_xlabel('Days', fontsize = 16)
+    ax1.set_xlabel('Number of Items', fontsize = 16)
+    ax1.set_ylabel('PDF', fontsize = 16)
 
-    plt.suptitle('Activeness of Items', fontsize = 16)
+    plt.suptitle('Stop Time v.s. Similarity (p-value<0.05)', fontsize = 16)
     plt.show()
 
 
@@ -152,19 +123,19 @@ def plot_boxplot(infile):
             cols = row.strip().split(',')
             data2.append(int(cols[0]))
     print('Without')
-    a = np.array(data1)
-    q1 = np.percentile(a, 25)
-    q2 = np.percentile(a, 50)
-    q3 = np.percentile(a, 75)
+    a = array(data1)
+    q1 = percentile(a, 25)
+    q2 = percentile(a, 50)
+    q3 = percentile(a, 75)
     print('1Q: ',q1)
     print('Med: ',q2)
     print('IQR: ', (q3 - q1))
 
     print('With')
-    a = np.array(data2)
-    q1 = np.percentile(a, 25)
-    q2 = np.percentile(a, 50)
-    q3 = np.percentile(a, 75)
+    a = array(data2)
+    q1 = percentile(a, 25)
+    q2 = percentile(a, 50)
+    q3 = percentile(a, 75)
     print('1Q: ',q1)
     print('Med: ',q2)
     print('IQR: ', (q3 - q1))
@@ -190,9 +161,9 @@ def plot_cdf(in_file1):
             #data.append(float(cols[3]) / float(cols[4]))
 
     # prepare cumulative value
-    sorted_data1 = np.sort(data1)
+    sorted_data1 = sort(data1)
 
-    yvals1=np.arange(len(sorted_data1))/float(len(sorted_data1))
+    yvals1= arange(len(sorted_data1))/float(len(sorted_data1))
 
     fig, ax = plt.subplots()
     plt.suptitle('CDF of Similarity of Effective User', fontsize = 16)
@@ -221,10 +192,9 @@ def plot_barplot_simple():
 
     n_groups = len(data)
 
-
     fig, ax = plt.subplots()
 
-    index = np.arange(n_groups)
+    index = arange(n_groups)
     bar_width = 0.35
 
     opacity = 0.4
@@ -248,7 +218,7 @@ def plot_barplot(in_file, x_label, y_label):
     ax.set_ylabel(y_label, fontsize=18)
     header = []
 
-    ind = np.arange(3.6, 31, 5)
+    ind = arange(3.6, 31, 5)
     with codecs.open(in_file, 'r') as fr:
         data_frame = {}
         x = []
@@ -287,11 +257,13 @@ def plot_barplot(in_file, x_label, y_label):
 
 
 if __name__ == '__main__':
-    #plot_scatter('exp7_result.txt')
-    plot_line('tmp_exp.csv', 'Exp(position)', 'Probability', 'Average Execution Time RWRG')
-    #plot_line('exp_recall.csv', 'Number of Iterations', 'Recall', 'update itemset-based RWRG Recall@5')
+    input_path = 'D:\\Exp Result\\US_gowalla\\CRRRW\\'
+    #plot_scatter('tmp_exp.csv')
+    #plot_surface('tmp_exp.csv')
+    #plot_line('exp_recall.csv', 'Iteration', 'Pre_Recall', '')
+    plot_line('exp_recall.csv', 'Iteration', 'Recall', '4-step CRRRW')
     #plot_boxplot('tmp_exp.csv')
-    #plot_hist('tmp_exp.csv')
+    #plot_hist('exp_recall.csv', True)
     #plot_cdf('tmp_time.csv')
     #plot_barplot('tmp_exp.csv', 'Iteration', 'Pre_Recall')
     #plot_barplot_simple()
