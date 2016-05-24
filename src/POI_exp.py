@@ -44,10 +44,10 @@ def exp_recall(infile, test_logs):
     with codecs.open(infile, 'r') as fr:
         for row in fr:
             cols = row.strip().split('\t')
-            answers = test_logs[cols[0]]
+            answers = test_logs[cols[0]][-1]
             test += 1
-            for i in range(3, len(cols)):
-                if cols[i] in answers:
+            for i in range(2, len(cols)):
+                if cols[i] == answers:
                     #if cols[i] in answers[answers.index(cols[i]):]:
                     #answers.remove(cols[i])
                     hit += 1
@@ -57,27 +57,27 @@ def exp_recall(infile, test_logs):
 
 
 def main(output_path):
-    train_file = '../data/US_gowalla/conv_train.dat'
-    test_file = '../data/yoochoose/buy_logs_5.dat'
+    train_file = '../data/CA_foursquare/conv_train.dat'
+    test_file =  '../data/CA_foursquare/conv_test.dat'
     #train_logs = load_conv_logs(train_file, 0, 1)
-    test_logs = load_conv_logs(test_file, 0, 2)
+    test_logs = load_conv_logs(test_file, 0, 1)
     #count_activities_session(train_logs, 'tmp_exp.csv')
     #count_num_feature('../data/SG_gowalla/conv_train.dat', 0, ',')
 
     recalls = {}
     #for k in range(5, 6, 5):
-    for k in range(50, 220, 30):
+    for k in range(5, 32, 5):
         print(('top %s')%(k))
-        recall = exp_recall('iteration_%s.txt'%k, test_logs)
-        #recall = exp_recall(output_path + ('top_%s.txt')%(k), test_logs)
+        #recall = exp_recall(output_path + 'iteration_%s.txt'%k, test_logs)
+        recall = exp_recall(output_path + ('top_%s.txt')%(k), test_logs)
 
         recalls[k] = str(recall)
 
     #fw = codecs.open(output_path+'exp_recall.csv', 'w')
-    fw = codecs.open('exp_closeloop_recall.csv', 'w')
+    fw = codecs.open(output_path + 'exp_recall_top.csv', 'w')
 
     #fw.write('iteration,Recall\n')
-    fw.write('init_iter,Recall\n')
+    fw.write('top,Recall\n')
     for k in sorted(recalls):
         fw.write(str(k) + ',' + recalls[k] + '\n')
     fw.close()
@@ -85,5 +85,5 @@ def main(output_path):
 
 
 if __name__ == "__main__":
-    main('D:\\Exp Result\\US_gowalla\\CRRCF\\')
+    main('D:\\Exp Result\\CA_foursquare\\CRRRW\\')
 

@@ -67,12 +67,12 @@ def write_graph(part_1, part_2, filename):
 
 
 if __name__ == '__main__':
-    train_file = '../data/yoochoose/click_logs_4.dat'
-    graph_file = 'yoochoose_graph'
+    train_file = '../data/CA_foursquare/conv_train.dat'
+    graph_file = 'CA_foursquare_graph'
 
     start_time = time.time()
-    session_item = load_raw_logs(train_file, 0, 2)
-    item_session = load_raw_logs(train_file, 2, 0)
+    session_item = load_raw_logs(train_file, 0, 1)
+    item_session = load_raw_logs(train_file, 1, 0)
     end_time = time.time()
     '''
     print('number of session', len(user_logs))

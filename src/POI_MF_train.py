@@ -58,7 +58,6 @@ def export_matrix(infile):
 
 
 def export_item_latent_matrix(item_matrix, h_iid, outfile):
-
     in_h_iid = {}
     for i in h_iid:
         in_h_iid[h_iid[i]] = i
@@ -73,14 +72,15 @@ def export_item_latent_matrix(item_matrix, h_iid, outfile):
 
 if __name__ == '__main__':
 
-    V, h_uid, h_iid = export_matrix('../data/CA_foursquare/conv_train.dat')
-    #V = np.random.rand(10, 8)
+    #V, h_uid, h_iid = export_matrix('../data/CA_foursquare/conv_train.dat')
+    V = np.random.rand(10, 8)
     snmf = nimfa.Snmf(V, seed="random_vcol", rank=5, max_iter=12, version='r',
                       eta=1., beta=1e-4, i_conv=10, w_min_change=0)
     snmf_fit = snmf()
     item_matrix = np.transpose(snmf.coef())
+    print(item_matrix.shape[1])
 
-    export_item_latent_matrix(item_matrix, h_iid, 'item_matrix.tsv')
+    #export_item_latent_matrix(item_matrix, h_iid, 'item_matrix.tsv')
 
 
 
